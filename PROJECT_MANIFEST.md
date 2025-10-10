@@ -1,27 +1,26 @@
 # 📦 MANIFESTE DE PROJET - 1wms.io
-## Document de continuité pour reprise de développement
 
-**Date de création** : 10 octobre 2025  
-**Version** : 2.0.2  
+**Date de mise à jour** : 10 octobre 2025  
+**Version** : 2.1.0  
 **Développeur** : Amrouche (Débutant)  
 **Repository GitHub** : https://github.com/YAMROUCHE/wmsforge-v2  
-**Statut actuel** : Phase 2 terminée - Backend Auth 100% fonctionnel ✅
+**Statut actuel** : Phase 2 TERMINÉE à 100% ✅
 
 ---
 
 ## 🚨 CONSIGNES STRICTES DE DÉVELOPPEMENT
 
-**Ces règles DOIVENT être respectées à chaque étape :**
+Ces règles DOIVENT être respectées à chaque étape :
 
 1. ✅ **Respect absolu du manifeste** : Toujours suivre l'architecture et les instructions définies
 2. ✅ **Pas de modification sans accord** : Ne JAMAIS modifier le code sans en parler d'abord
-3. ✅ **Sauvegardes systématiques** : 
+3. ✅ **Sauvegardes systématiques** :
    - Sauvegarde locale : `git add . && git commit -m "message"`
    - Sauvegarde GitHub : `git push`
    - Fréquence : Après chaque fonctionnalité complète
 4. ✅ **Méthode CAT obligatoire** : Toujours utiliser `cat > fichier << 'EOF'` avec le code COMPLET
 5. ✅ **Vérification du nombre de lignes** : Toujours compter les lignes avant déploiement avec `wc -l fichier`
-6. ✅ **Monitoring des tokens** : 
+6. ✅ **Monitoring des tokens** :
    - Afficher le nombre de tokens restants régulièrement
    - Alerter si < 20,000 tokens restants
 7. ✅ **Mise à jour du manifeste** : Mettre à jour ce document après chaque phase complétée
@@ -31,8 +30,7 @@
 ## 🎯 CONTEXTE DU PROJET
 
 ### Objectif
-Créer une application SaaS complète de gestion d'entrepôt (WMS) appelée **1wms.io**, 
-déployée sur Cloudflare avec une architecture moderne et scalable.
+Créer une application SaaS complète de gestion d'entrepôt (WMS) appelée **1wms.io**, déployée sur Cloudflare avec une architecture moderne et scalable.
 
 ### Historique
 - **Projet initial** : WmsForge développé sur Replit (architecture Node.js classique)
@@ -41,7 +39,7 @@ déployée sur Cloudflare avec une architecture moderne et scalable.
 
 ---
 
-## 🏗️ ARCHITECTURE TECHNIQUE
+## 🏗 ARCHITECTURE TECHNIQUE
 
 ### Stack Technique
 
@@ -50,18 +48,18 @@ déployée sur Cloudflare avec une architecture moderne et scalable.
 - Vite 5.3.4 comme bundler
 - Tailwind CSS 3.4.7 pour le styling
 - React Router 6.26.0
-- TanStack Query pour la gestion d'état
+- TanStack Query pour la gestion d'état (à intégrer)
 - Lucide React pour les icônes
 
-**Backend ✅ FONCTIONNEL**
+**Backend** ✅ FONCTIONNEL
 - Cloudflare Workers avec Hono 4.5.0
 - TypeScript strict
 - Architecture RESTful API
 - JWT pour l'authentification (implémentation custom Web Crypto)
 - SHA-256 pour le hash des mots de passe
-- Routes : /auth/register, /auth/login, /auth/me
+- Routes : `/auth/register`, `/auth/login`, `/auth/me`
 
-**Base de données ✅ CONFIGURÉE**
+**Base de données** ✅ CONFIGURÉE
 - Cloudflare D1 (SQLite)
 - Drizzle ORM 0.33.0
 - ID de base : `4f114494-537e-4c31-8271-79f3ee49dfed`
@@ -85,18 +83,19 @@ wmsforge-v2/
 │   │   └── dashboard/             ❌ À créer
 │   ├── pages/
 │   │   ├── Landing.tsx            ✅ Terminé
-│   │   ├── Auth.tsx               ✅ Terminé (Login/Register UI)
-│   │   ├── Dashboard.tsx          ❌ À créer
+│   │   ├── Auth.tsx               ✅ Terminé (Login/Register connecté)
+│   │   ├── Dashboard.tsx          ✅ Terminé (page simple)
 │   │   ├── Products.tsx           ❌ À créer
 │   │   ├── Inventory.tsx          ❌ À créer
 │   │   ├── Orders.tsx             ❌ À créer
 │   │   ├── Locations.tsx          ❌ À créer
 │   │   └── Reports.tsx            ❌ À créer
-│   ├── hooks/                     ❌ À créer (useAuth)
+│   ├── hooks/                     ✅ useAuth.ts
+│   ├── contexts/                  ✅ AuthContext.tsx
 │   ├── lib/
 │   │   ├── utils.ts               ✅ Terminé
-│   │   └── api.ts                 ❌ À créer
-│   ├── App.tsx                    ✅ Routes Landing + Auth
+│   │   └── api.ts                 ✅ Client API complet
+│   ├── App.tsx                    ✅ Routes + AuthProvider
 │   ├── main.tsx                   ✅ Terminé
 │   └── index.css                  ✅ Tailwind + Style Claude.ai
 │
@@ -158,80 +157,82 @@ Input:
 
 ## ✅ ÉTAT D'AVANCEMENT
 
-### Phase 1 : Configuration et Landing Page ✅ TERMINÉ
-- [x] Initialisation du projet
-- [x] Configuration Vite + React + TypeScript
-- [x] Configuration Tailwind CSS
-- [x] Création composants UI de base (Button, Input)
-- [x] Création Header avec navigation
-- [x] Page Landing fonctionnelle
-- [x] Style Claude.ai appliqué
-- [x] Dépôt GitHub créé et synchronisé
-- [x] Branding 1wms.io appliqué
-- [x] Consignes strictes intégrées au manifeste
+### Phase 1 : Configuration et Landing Page ✅ TERMINÉE
+- ✅ Initialisation du projet
+- ✅ Configuration Vite + React + TypeScript
+- ✅ Configuration Tailwind CSS
+- ✅ Création composants UI de base (Button, Input)
+- ✅ Création Header avec navigation
+- ✅ Page Landing fonctionnelle
+- ✅ Style Claude.ai appliqué
+- ✅ Dépôt GitHub créé et synchronisé
+- ✅ Branding 1wms.io appliqué
+- ✅ Consignes strictes intégrées au manifeste
 
-### Phase 2 : Authentification ✅ TERMINÉ (100%)
-- [x] Page Auth (Login/Register) - Frontend
-- [x] Schéma de base de données (Drizzle) - 9 tables
-- [x] Backend Auth avec JWT (Worker Hono)
-- [x] Routes /auth/register et /auth/login
-- [x] Hash des mots de passe (SHA-256)
-- [x] Validation des données
-- [x] Migrations générées et appliquées en local
-- [x] Tests réussis (Register + Login)
-- [ ] Connecter le frontend au backend ⬅️ PROCHAIN
-- [ ] Context Auth React
-- [ ] Hook useAuth
-- [ ] Middleware de protection des routes
-- [ ] Page Dashboard basique pour tester l'auth
+### Phase 2 : Authentification ✅ TERMINÉE (100%)
+- ✅ Page Auth (Login/Register) - Frontend
+- ✅ Schéma de base de données (Drizzle) - 9 tables
+- ✅ Backend Auth avec JWT (Worker Hono)
+- ✅ Routes `/auth/register` et `/auth/login`
+- ✅ Hash des mots de passe (SHA-256)
+- ✅ Validation des données
+- ✅ Migrations générées et appliquées en local
+- ✅ Tests réussis (Register + Login)
+- ✅ Client API créé (`src/lib/api.ts`) - 115 lignes
+- ✅ Context Auth React (`src/contexts/AuthContext.tsx`) - 224 lignes
+- ✅ Hook useAuth (`src/hooks/useAuth.ts`) - 47 lignes
+- ✅ Page Auth connectée au backend - 305 lignes
+- ✅ Page Dashboard créée - 137 lignes
+- ✅ Middleware de protection des routes
+- ✅ Tests complets : Register → Login → Dashboard → Logout
+- ✅ **TOUT FONCTIONNE PARFAITEMENT !** 🎉
 
 ### Phase 3 : Dashboard ❌ À FAIRE
-- [ ] Page Dashboard
-- [ ] KPI Cards
-- [ ] Graphiques
-- [ ] Activités récentes
-- [ ] Alertes
+- ❌ Page Dashboard avancée
+- ❌ KPI Cards
+- ❌ Graphiques (Recharts)
+- ❌ Activités récentes
+- ❌ Alertes/Notifications
 
 ### Phase 4 : Gestion Produits ❌ À FAIRE
-- [ ] Liste produits
-- [ ] Formulaire création/édition
-- [ ] Upload images (R2)
-- [ ] Import CSV
-- [ ] Routes API backend
+- ❌ Liste produits
+- ❌ Formulaire création/édition
+- ❌ Upload images (R2)
+- ❌ Import CSV
+- ❌ Routes API backend
 
 ### Phase 5 : Inventaire ❌ À FAIRE
-- [ ] Vue stock en temps réel
-- [ ] Mouvements de stock
-- [ ] Ajustements
-- [ ] Scanner codes-barres
+- ❌ Vue stock en temps réel
+- ❌ Mouvements de stock
+- ❌ Ajustements
+- ❌ Scanner codes-barres
 
 ### Phase 6 : Autres modules ❌ À FAIRE
-- [ ] Commandes
-- [ ] Emplacements
-- [ ] Rapports
-- [ ] Exports
+- ❌ Commandes
+- ❌ Emplacements
+- ❌ Rapports
+- ❌ Exports
 
 ### Phase 7 : Déploiement ❌ À FAIRE
-- [ ] Configuration D1 en production
-- [ ] Configuration R2
-- [ ] Déploiement Cloudflare Pages
-- [ ] Tests de production
+- ❌ Configuration D1 en production
+- ❌ Configuration R2
+- ❌ Déploiement Cloudflare Pages
+- ❌ Tests de production
 
 ---
 
-## 🗄️ SCHÉMA DE BASE DE DONNÉES ✅ CRÉÉ
+## 🗄 SCHÉMA DE BASE DE DONNÉES ✅ CRÉÉ
 
 ### Tables Créées et Testées
-
-**organizations** - Organisations (multi-tenant) ✅  
-**users** - Utilisateurs avec hash de mot de passe ✅  
-**products** - Catalogue produits ✅  
-**suppliers** - Fournisseurs ✅  
-**locations** - Emplacements d'entrepôt ✅  
-**inventory** - Stock par produit et emplacement ✅  
-**stock_movements** - Historique des mouvements ✅  
-**orders** - Commandes clients/fournisseurs ✅  
-**order_items** - Lignes de commande ✅
+1. **organizations** - Organisations (multi-tenant) ✅
+2. **users** - Utilisateurs avec hash de mot de passe ✅
+3. **products** - Catalogue produits ✅
+4. **suppliers** - Fournisseurs ✅
+5. **locations** - Emplacements d'entrepôt ✅
+6. **inventory** - Stock par produit et emplacement ✅
+7. **stock_movements** - Historique des mouvements ✅
+8. **orders** - Commandes clients/fournisseurs ✅
+9. **order_items** - Lignes de commande ✅
 
 ---
 
@@ -248,9 +249,9 @@ npm run preview          # Preview build
 
 ### Base de données
 ```bash
-npm run db:generate      # Générer migrations Drizzle
-npm run db:migrate       # Appliquer migrations en production
-npx wrangler d1 migrations apply wmsforge-db --local  # Migrations locales ✅ FAIT
+npm run db:generate                                          # Générer migrations Drizzle
+npm run db:migrate                                          # Appliquer migrations en production
+npx wrangler d1 migrations apply wmsforge-db --local        # Migrations locales ✅ FAIT
 ```
 
 ### Tests API ✅ TESTÉS
@@ -278,9 +279,9 @@ git push
 
 ### Cloudflare
 ```bash
-npx wrangler d1 create wmsforge-db           # Créer base D1
-npx wrangler r2 bucket create wmsforge-uploads  # Créer bucket R2
-npx wrangler pages deploy dist               # Déployer
+npx wrangler d1 create wmsforge-db                # Créer base D1
+npx wrangler r2 bucket create wmsforge-uploads    # Créer bucket R2
+npx wrangler pages deploy dist                     # Déployer
 ```
 
 ---
@@ -288,47 +289,54 @@ npx wrangler pages deploy dist               # Déployer
 ## ⚠️ PROBLÈMES RÉSOLUS
 
 ### Problème 1 : Architecture Node.js vs Workers
-**Cause** : Le projet initial (WmsForge) était en Node.js classique  
-**Solution** : Refonte complète avec architecture Workers  
-**Statut** : ✅ Résolu
+- **Cause** : Le projet initial (WmsForge) était en Node.js classique
+- **Solution** : Refonte complète avec architecture Workers
+- **Statut** : ✅ Résolu
 
 ### Problème 2 : Erreur "border-border" Tailwind
-**Cause** : Classe CSS non existante dans index.css  
-**Solution** : Remplacer par `border-color: theme('colors.gray.200')`  
-**Statut** : ✅ Résolu
+- **Cause** : Classe CSS non existante dans index.css
+- **Solution** : Remplacer par border-color: theme('colors.gray.200')
+- **Statut** : ✅ Résolu
 
 ### Problème 3 : tsconfig.node.json manquant
-**Cause** : Configuration Vite incomplète  
-**Solution** : Créer tsconfig.node.json avec config Vite  
-**Statut** : ✅ Résolu
+- **Cause** : Configuration Vite incomplète
+- **Solution** : Créer tsconfig.node.json avec config Vite
+- **Statut** : ✅ Résolu
 
 ### Problème 4 : migrations_dir mal placé dans wrangler.toml
-**Cause** : migrations_dir au niveau racine au lieu de [[d1_databases]]  
-**Solution** : Déplacer dans la section [[d1_databases]]  
-**Statut** : ✅ Résolu
+- **Cause** : migrations_dir au niveau racine au lieu de [[d1_databases]]
+- **Solution** : Déplacer dans la section [[d1_databases]]
+- **Statut** : ✅ Résolu
 
 ### Problème 5 : Tables non créées (no such table: users)
-**Cause** : Migrations générées mais pas appliquées  
-**Solution** : `npx wrangler d1 migrations apply wmsforge-db --local`  
-**Statut** : ✅ Résolu
+- **Cause** : Migrations générées mais pas appliquées
+- **Solution** : `npx wrangler d1 migrations apply wmsforge-db --local`
+- **Statut** : ✅ Résolu
+
+### Problème 6 : Erreurs TypeScript - Imports par défaut
+- **Cause** : Composants exportés avec `export const` mais importés avec `import X from`
+- **Solution** : Corriger tous les imports/exports pour utiliser des exports nommés
+- **Statut** : ✅ Résolu
+
+### Problème 7 : Page blanche dans le navigateur
+- **Cause** : Erreurs TypeScript non corrigées
+- **Solution** : Correction de tous les fichiers (api.ts, Input.tsx, Auth.tsx, Dashboard.tsx, App.tsx)
+- **Statut** : ✅ Résolu
 
 ---
 
 ## 📝 PROCHAINES ÉTAPES RECOMMANDÉES
 
 ### Priorité Immédiate (Prochaine session)
-1. **Créer le client API** (src/lib/api.ts)
-2. **Créer le Context Auth** pour gérer l'état de connexion globalement
-3. **Créer le hook useAuth** pour accéder facilement à l'auth
-4. **Connecter la page Auth** au backend
-5. **Créer une page Dashboard simple** pour tester l'authentification complète
-6. **Tester le flow complet** : Register → Login → Dashboard → Logout
+1. Améliorer le Dashboard avec KPI et statistiques
+2. Créer le module Produits (CRUD complet)
+3. Ajouter l'upload d'images vers R2
+4. Créer le module Inventaire
+5. Ajouter des graphiques avec Recharts
 
 ### Ordre de développement suggéré
-```
-Phase 2: Auth (finaliser) → Phase 3: Dashboard → Phase 4: Produits → 
+Phase 2: Auth (✅ terminé) → Phase 3: Dashboard → Phase 4: Produits →
 Phase 5: Inventaire → Phase 6: Autres modules → Phase 7: Déploiement
-```
 
 ---
 
@@ -336,10 +344,10 @@ Phase 5: Inventaire → Phase 6: Autres modules → Phase 7: Déploiement
 
 ### IDs Cloudflare (Dans wrangler.toml)
 ```toml
-database_id = "4f114494-537e-4c31-8271-79f3ee49dfed"  # D1 Database
-bucket_name = "wmsforge-uploads"                       # R2 Bucket
-JWT_SECRET = "whsec_a8f3b2c1d4e5f6g7h8i9j0k1l2m3n4o5" # JWT Secret
-migrations_dir = "db/migrations"                       # Chemin migrations
+database_id = "4f114494-537e-4c31-8271-79f3ee49dfed"   # D1 Database
+bucket_name = "wmsforge-uploads"                        # R2 Bucket
+JWT_SECRET = "whsec_a8f3b2c1d4e5f6g7h8i9j0k1l2m3n4o5"  # JWT Secret
+migrations_dir = "db/migrations"                        # Chemin migrations
 ```
 
 ---
@@ -349,7 +357,7 @@ migrations_dir = "db/migrations"                       # Chemin migrations
 ### Authentification
 - `POST /auth/register` - Créer un compte ✅ TESTÉ
 - `POST /auth/login` - Se connecter ✅ TESTÉ
-- `GET /auth/me` - Vérifier le token (À implémenter complètement)
+- `GET /auth/me` - Vérifier le token ✅ IMPLÉMENTÉ
 
 ### Santé
 - `GET /health` - Health check ✅ TESTÉ
@@ -358,27 +366,31 @@ migrations_dir = "db/migrations"                       # Chemin migrations
 
 ## 📊 STATISTIQUES DU CODE
 
-**Backend Worker :** 488 lignes au total
-- worker/src/index.ts : 41 lignes
-- worker/src/routes/auth.ts : 202 lignes
-- worker/src/utils/jwt.ts : 76 lignes
-- worker/src/utils/password.ts : 36 lignes
-- db/schema.ts : 106 lignes
-- drizzle.config.ts : 13 lignes
-- worker/tsconfig.json : 14 lignes
+### Backend Worker : 488 lignes au total
+- `worker/src/index.ts` : 41 lignes
+- `worker/src/routes/auth.ts` : 202 lignes
+- `worker/src/utils/jwt.ts` : 76 lignes
+- `worker/src/utils/password.ts` : 36 lignes
+- `db/schema.ts` : 106 lignes
+- `drizzle.config.ts` : 13 lignes
+- `worker/tsconfig.json` : 14 lignes
 
-**Frontend :** ~400 lignes
-- Pages (Landing, Auth)
+### Frontend : ~1,362 lignes
+- Pages (Landing, Auth, Dashboard)
 - Composants UI (Button, Input, Header)
+- Contexts (AuthContext)
+- Hooks (useAuth)
+- Lib (api.ts, utils.ts)
 
-**Total projet :** ~900 lignes de code
+### Total projet : ~1,850 lignes de code
 
 ---
 
 ## 👨‍💻 NOTES DÉVELOPPEUR
 
 ### Niveau de compétence
-**Débutant** - Nécessite accompagnement pas à pas détaillé
+- Débutant - Nécessite accompagnement pas à pas détaillé
+- Fait des progrès rapides ! 🚀
 
 ### Préférences de style
 - Commentaires en français
@@ -424,16 +436,16 @@ tree -L 3 -I 'node_modules|dist'
 
 ## 🎯 OBJECTIF FINAL
 
-Application SaaS complète 1wms.io :
+Application SaaS complète **1wms.io** :
 - ✅ Authentification multi-utilisateurs
 - ✅ Multi-tenant (organizations)
-- ✅ Gestion complète produits, inventaire, commandes
-- ✅ Import/Export CSV
-- ✅ Upload images (R2)
-- ✅ Rapports détaillés
+- ❌ Gestion complète produits, inventaire, commandes
+- ❌ Import/Export CSV
+- ❌ Upload images (R2)
+- ❌ Rapports détaillés
 - ✅ Design minimaliste style Claude.ai
-- ✅ Déployé sur Cloudflare (Pages + Workers + D1 + R2)
-- ✅ Performance et scalabilité
+- ❌ Déployé sur Cloudflare (Pages + Workers + D1 + R2)
+- ❌ Performance et scalabilité
 
 ---
 
