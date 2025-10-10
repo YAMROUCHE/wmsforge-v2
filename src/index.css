@@ -1,0 +1,50 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 10%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-white text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer components {
+  /* Style Claude.ai - Boutons */
+  .btn-primary {
+    @apply px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors;
+  }
+  
+  .btn-secondary {
+    @apply px-4 py-2 bg-white text-black border border-black rounded-lg font-medium hover:bg-gray-50 transition-colors;
+  }
+  
+  .btn-ghost {
+    @apply px-4 py-2 text-gray-700 rounded-lg font-medium hover:bg-gray-100 transition-colors;
+  }
+  
+  /* Navigation active */
+  .nav-link {
+    @apply text-gray-700 hover:text-blue-600 transition-colors;
+  }
+  
+  .nav-link-active {
+    @apply text-blue-600 font-medium;
+  }
+}
