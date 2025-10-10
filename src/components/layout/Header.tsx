@@ -21,9 +21,9 @@ export const Header: React.FC = () => {
           {/* Logo */}
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">W</span>
+              <span className="text-white font-bold text-lg">1</span>
             </div>
-            <span className="text-xl font-semibold">WmsForge</span>
+            <span className="text-xl font-semibold">1WMS.io</span>
           </div>
 
           {/* Navigation */}

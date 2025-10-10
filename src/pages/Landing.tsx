@@ -12,9 +12,9 @@ export const Landing: React.FC = () => {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">W</span>
+                <span className="text-white font-bold text-lg">1</span>
               </div>
-              <span className="text-xl font-semibold">WmsForge</span>
+              <span className="text-xl font-semibold">1WMS.io</span>
             </div>
             <div className="space-x-3">
               <Link to="/auth">
@@ -35,7 +35,7 @@ export const Landing: React.FC = () => {
             Gestion d'entrepôt simplifiée
           </h1>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            WmsForge vous aide à gérer votre inventaire, vos commandes et vos emplacements
+            1WMS.io vous aide à gérer votre inventaire, vos commandes et vos emplacements
             avec une interface simple et moderne.
           </p>
           <div className="flex justify-center space-x-4">
