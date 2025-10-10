@@ -7,7 +7,8 @@ pages_build_output_dir = "dist"
 [[d1_databases]]
 binding = "DB"
 database_name = "wmsforge-db"
-database_id = ""
+database_id = "4f114494-537e-4c31-8271-79f3ee49dfed"
+migrations_dir = "db/migrations"
 
 [[r2_buckets]]
 binding = "BUCKET"
@@ -15,3 +16,4 @@ bucket_name = "wmsforge-uploads"
 
 [vars]
 NODE_ENV = "production"
+JWT_SECRET = "whsec_a8f3b2c1d4e5f6g7h8i9j0k1l2m3n4o5"
