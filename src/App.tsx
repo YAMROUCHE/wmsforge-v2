@@ -4,6 +4,7 @@ import { useAuth } from './hooks/useAuth';
 import { Landing } from './pages/Landing';
 import Auth from './pages/Auth';
 import Dashboard from './pages/Dashboard';
+import NotFound from './pages/NotFound';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -45,7 +46,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </Router>
     </AuthProvider>

@@ -4,6 +4,7 @@ import { useAuth } from '../hooks/useAuth';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Header } from '../components/layout/Header';
+import { Alert } from '../components/ui/Alert';
 
 type AuthMode = 'login' | 'register';
 
@@ -95,17 +96,8 @@ export default function Auth() {
           </p>
         </div>
 
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-red-700 text-sm">{error}</p>
-          </div>
-        )}
-
-        {success && (
-          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-            <p className="text-green-700 text-sm">{success}</p>
-          </div>
-        )}
+        {error && <Alert variant="error" message={error} className="mb-6" />}
+        {success && <Alert variant="success" message={success} className="mb-6" />}
 
         {mode === 'login' ? (
           <form onSubmit={handleLogin} className="space-y-6">
