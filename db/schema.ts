@@ -72,6 +72,7 @@ export const stockMovements = sqliteTable('stock_movements', {
   organizationId: integer('organization_id').notNull().references(() => organizations.id),
   productId: integer('product_id').notNull().references(() => products.id),
   locationId: integer('location_id').references(() => locations.id),
+  userId: integer('user_id').notNull().references(() => users.id),
   type: text('type').notNull(), // 'in', 'out', 'transfer', 'adjustment'
   quantity: integer('quantity').notNull(),
   reference: text('reference'),

@@ -83,12 +83,24 @@ inventoryRouter.get('/:productId', async (c) => {
 inventoryRouter.post('/adjust', async (c) => {
   try {
     const organizationId = c.get('organizationId');
-    const userId = c.get('userId'); // 🔥 AJOUT DU userId
+    const userId = c.get('userId');
     const body = await c.req.json();
     const { productId, locationId, quantity, type, notes } = body;
 
+    // Validation des champs obligatoires
     if (!productId || !locationId || quantity === undefined || !type) {
       return c.json({ error: 'Champs manquants' }, 400);
+    }
+
+    // Validation du type
+    if (!['in', 'out', 'adjustment'].includes(type)) {
+      return c.json({ error: 'Type invalide. Doit être: in, out ou adjustment' }, 400);
+    }
+
+    // Validation de la quantité
+    const qty = parseInt(quantity);
+    if (isNaN(qty) || qty < 0) {
+      return c.json({ error: 'La quantité doit être un nombre positif' }, 400);
     }
 
     const db = drizzle(c.env.DB);
@@ -102,11 +114,34 @@ inventoryRouter.post('/adjust', async (c) => {
       )
       .get();
 
-    let newQuantity;
+    let newQuantity = 0;
+
+    // 🔥 CORRECTION PRINCIPALE : Gérer correctement chaque type d'opération
     if (existingInventory) {
-      // Mettre à jour la quantité
-      newQuantity = existingInventory.quantity + parseInt(quantity);
-      
+      const currentQuantity = existingInventory.quantity;
+
+      switch (type) {
+        case 'in':
+          // Entrée : AJOUTER la quantité
+          newQuantity = currentQuantity + qty;
+          break;
+        case 'out':
+          // Sortie : SOUSTRAIRE la quantité
+          newQuantity = currentQuantity - qty;
+          // Empêcher le stock négatif
+          if (newQuantity < 0) {
+            return c.json({ 
+              error: `Stock insuffisant. Stock actuel: ${currentQuantity}, sortie demandée: ${qty}` 
+            }, 400);
+          }
+          break;
+        case 'adjustment':
+          // Ajustement : REMPLACER par la nouvelle quantité
+          newQuantity = qty;
+          break;
+      }
+
+      // Mettre à jour l'inventaire existant
       await db
         .update(inventory)
         .set({
@@ -116,8 +151,15 @@ inventoryRouter.post('/adjust', async (c) => {
         .where(eq(inventory.id, existingInventory.id))
         .run();
     } else {
-      // Créer un nouvel enregistrement d'inventaire
-      newQuantity = parseInt(quantity);
+      // Pas d'inventaire existant
+      if (type === 'out') {
+        return c.json({ 
+          error: 'Impossible de faire une sortie : aucun stock existant' 
+        }, 400);
+      }
+
+      // Pour 'in' et 'adjustment', créer un nouvel enregistrement
+      newQuantity = qty;
       
       await db
         .insert(inventory)
@@ -130,28 +172,33 @@ inventoryRouter.post('/adjust', async (c) => {
         .run();
     }
 
-    // Enregistrer le mouvement de stock avec userId 🔥
+    // Enregistrer le mouvement de stock
     await db
       .insert(stockMovements)
       .values({
         organizationId,
         productId,
         locationId,
-        userId, // 🔥 AJOUT ICI
+        userId,
         type,
-        quantity: parseInt(quantity),
+        quantity: qty,
         notes: notes || null,
       })
       .run();
 
-    return c.json({ message: 'Stock ajusté avec succès', newQuantity }, 200);
+    return c.json({ 
+      message: 'Stock ajusté avec succès', 
+      newQuantity,
+      type,
+      quantityChanged: qty
+    }, 200);
   } catch (error) {
     console.error('Erreur POST /api/inventory/adjust:', error);
     return c.json({ error: 'Erreur serveur' }, 500);
   }
 });
 
-// GET /api/stock-movements - Historique des mouvements
+// GET /api/inventory/movements/list - Historique des mouvements
 inventoryRouter.get('/movements/list', async (c) => {
   try {
     const organizationId = c.get('organizationId');
@@ -178,7 +225,7 @@ inventoryRouter.get('/movements/list', async (c) => {
 
     return c.json(result, 200);
   } catch (error) {
-    console.error('Erreur GET /api/stock-movements:', error);
+    console.error('Erreur GET /api/inventory/movements/list:', error);
     return c.json({ error: 'Erreur serveur' }, 500);
   }
 });
