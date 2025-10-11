@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import type { D1Database } from '@cloudflare/workers-types';
-import { authRoutes } from './routes/auth';
+import auth from './routes/auth';
 
 type Bindings = {
   DB: D1Database;
@@ -22,7 +22,7 @@ app.get('/health', (c) => {
 });
 
 // Auth routes
-app.route('/auth', authRoutes);
+app.route('/auth', auth);
 
 // 404 handler
 app.notFound((c) => {
