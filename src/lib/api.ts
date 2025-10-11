@@ -35,6 +35,7 @@ export interface User {
   name: string;
   email: string;
   organizationId: number;
+  onboardingCompleted?: boolean;
 }
 
 export interface AuthResponse {
@@ -116,3 +117,156 @@ export const api = {
   setToken,
   removeToken,
 };
+
+// ===== ONBOARDING API =====
+
+export interface OnboardingData {
+  warehouseName: string;
+  product: {
+    sku: string;
+    name: string;
+    description?: string;
+    category?: string;
+    unitPrice?: string;
+    reorderPoint?: string;
+  };
+}
+
+export async function completeOnboarding(data: OnboardingData): Promise<{ message: string }> {
+  return fetchAPI<{ message: string }>('/api/onboarding/complete', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+// ===== PRODUCTS API =====
+
+export interface Product {
+  id: number;
+  organizationId: number;
+  sku: string;
+  name: string;
+  description?: string | null;
+  category?: string | null;
+  unitPrice?: number | null;
+  reorderPoint: number;
+  imageUrl?: string | null;
+  createdAt: string;
+}
+
+export async function getProducts(search?: string): Promise<Product[]> {
+  const queryParams = search ? `?search=${encodeURIComponent(search)}` : '';
+  return fetchAPI<Product[]>(`/api/products${queryParams}`);
+}
+
+export async function getProduct(id: number): Promise<Product> {
+  return fetchAPI<Product>(`/api/products/${id}`);
+}
+
+export interface CreateProductData {
+  sku: string;
+  name: string;
+  description?: string;
+  category?: string;
+  unitPrice?: string;
+  reorderPoint?: string;
+  imageUrl?: string;
+}
+
+export async function createProduct(data: CreateProductData): Promise<Product> {
+  return fetchAPI<Product>('/api/products', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateProduct(id: number, data: Partial<CreateProductData>): Promise<Product> {
+  return fetchAPI<Product>(`/api/products/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteProduct(id: number): Promise<{ message: string }> {
+  return fetchAPI<{ message: string }>(`/api/products/${id}`, {
+    method: 'DELETE',
+  });
+}
+
+export interface ImportCSVResult {
+  created: number;
+  failed: number;
+  errors: string[];
+}
+
+export async function importProductsCSV(products: CreateProductData[]): Promise<ImportCSVResult> {
+  return fetchAPI<ImportCSVResult>('/api/products/import-csv', {
+    method: 'POST',
+    body: JSON.stringify({ products }),
+  });
+}
+
+// ============================================
+// INVENTORY API
+// ============================================
+
+export interface InventoryItem {
+  productId: number;
+  sku: string;
+  name: string;
+  category: string | null;
+  reorderPoint: number;
+  totalQuantity: number;
+}
+
+export interface InventoryDetail {
+  id: number;
+  productId: number;
+  locationId: number;
+  locationName: string;
+  locationCode: string;
+  quantity: number;
+  updatedAt: string;
+}
+
+export interface StockMovement {
+  id: number;
+  type: string;
+  quantity: number;
+  notes: string | null;
+  createdAt: string;
+  productSku: string;
+  productName: string;
+  locationName: string | null;
+}
+
+export interface AdjustStockData {
+  productId: number;
+  locationId: number;
+  quantity: number;
+  type: 'in' | 'out' | 'adjustment';
+  notes?: string;
+}
+
+export async function getInventory(): Promise<InventoryItem[]> {
+  const response = await fetchAPI('/api/inventory');
+  return response;
+}
+
+export async function getInventoryByProduct(productId: number): Promise<InventoryDetail[]> {
+  const response = await fetchAPI(`/api/inventory/${productId}`);
+  return response;
+}
+
+export async function adjustStock(data: AdjustStockData): Promise<{ message: string; newQuantity: number }> {
+  const response = await fetchAPI('/api/inventory/adjust', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+  return response;
+}
+
+export async function getStockMovements(): Promise<StockMovement[]> {
+  const response = await fetchAPI('/api/inventory/movements/list');
+  return response;
+}

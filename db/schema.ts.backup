@@ -48,10 +48,8 @@ export const suppliers = sqliteTable('suppliers', {
 export const locations = sqliteTable('locations', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   organizationId: integer('organization_id').notNull().references(() => organizations.id),
-  code: text('code').notNull(),
   name: text('name').notNull(),
   type: text('type'), // 'zone', 'aisle', 'rack', 'shelf'
-  parentId: integer('parent_id'),
   capacity: integer('capacity'),
   createdAt: text('created_at').default('CURRENT_TIMESTAMP'),
 });
