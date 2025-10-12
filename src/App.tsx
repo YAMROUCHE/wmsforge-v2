@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard';
 import Onboarding from './pages/Onboarding';
 import Products from './pages/Products';
 import Inventory from './pages/Inventory';
+import WarehouseEditorTest from './pages/WarehouseEditorTest';
 import NotFound from './pages/NotFound';
 
 interface ProtectedRouteProps {
@@ -91,6 +92,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Inventory />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/warehouse-editor"
+            element={
+              <ProtectedRoute>
+                <WarehouseEditorTest />
               </ProtectedRoute>
             }
           />

@@ -1,0 +1,11 @@
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './contexts/AuthContext';
+import { useAuth } from './hooks/useAuth';
+import Landing from './pages/Landing';
+import Auth from './pages/Auth';
+import Dashboard from './pages/Dashboard';
+import Onboarding from './pages/Onboarding';
+import Products from './pages/Products';
+import Inventory from './pages/Inventory';
+import WarehouseEditorTest from './pages/WarehouseEditorTest';
+import NotFound from './pages/NotFound';
