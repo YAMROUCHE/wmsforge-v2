@@ -5,6 +5,7 @@ import { Landing } from './pages/Landing';
 import Auth from './pages/Auth';
 import Dashboard from './pages/Dashboard';
 import Onboarding from './pages/Onboarding';
+import WarehouseDashboard from './pages/WarehouseDashboard';
 import Products from './pages/Products';
 import Inventory from './pages/Inventory';
 import WarehouseEditorTest from './pages/WarehouseEditorTest';
@@ -102,6 +103,10 @@ function App() {
                 <WarehouseEditorTest />
               </ProtectedRoute>
             }
+          />
+          <Route
+            path="/warehouse-dashboard"
+            element={<WarehouseDashboard />}
           />
           <Route path="*" element={<NotFound />} />
         </Routes>

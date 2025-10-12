@@ -1,135 +1,180 @@
-import { Square, Minus, MapPin, Trash2, RotateCw } from 'lucide-react';
+import { Building2, Square, Minus, Layers, Package, MapPin, Box, Trash2, RotateCw } from 'lucide-react';
+import { useDraggable, useDroppable } from '@dnd-kit/core';
 import type { WarehouseComponent } from '../../lib/warehouse';
-import { ZONE_COLORS } from '../../lib/warehouse';
+import { getDepth, HIERARCHY_RULES, ZONE_COLORS } from '../../lib/warehouse';
 
 interface DraggableComponentProps {
   component: WarehouseComponent;
   isSelected: boolean;
   onClick: () => void;
+  onDoubleClick?: () => void;
   onDelete: () => void;
   onRotate: () => void;
   zoom: number;
+  isDraggedOver?: boolean;
 }
 
 export default function DraggableComponent({
   component,
   isSelected,
   onClick,
+  onDoubleClick,
   onDelete,
   onRotate,
   zoom,
+  isDraggedOver = false,
 }: DraggableComponentProps) {
-  const renderComponent = () => {
-    switch (component.type) {
-      case 'zone': {
-        const zone = component;
-        return (
-          <div
-            style={{
-              width: zone.size.width,
-              height: zone.size.height,
-              backgroundColor: ZONE_COLORS[zone.category] + '20',
-              border: `2px solid ${ZONE_COLORS[zone.category]}`,
-            }}
-            className="rounded-lg flex items-center justify-center relative group"
-          >
-            <Square className="w-6 h-6 text-gray-400" />
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-sm font-medium text-gray-700">{zone.name}</span>
-            </div>
-          </div>
-        );
-      }
+  const { attributes, listeners, setNodeRef: setDragRef, isDragging } = useDraggable({
+    id: component.id,
+    data: component,
+  });
 
-      case 'aisle': {
-        const aisle = component;
-        return (
-          <div
-            style={{
-              width: aisle.size.width,
-              height: aisle.size.height,
-              backgroundColor: '#10B98120',
-              border: '2px solid #10B981',
-            }}
-            className="rounded flex items-center justify-center relative group"
-          >
-            <Minus className="w-4 h-4 text-gray-400" />
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-xs font-medium text-gray-700">{aisle.code}</span>
-            </div>
-          </div>
-        );
-      }
+  const canHaveChildren = HIERARCHY_RULES[component.type]?.length > 0;
+  const { setNodeRef: setDropRef, isOver } = useDroppable({
+    id: component.id,
+    disabled: !canHaveChildren,
+    data: { type: component.type, component },
+  });
 
-      case 'location': {
-        const location = component;
-        return (
-          <div
-            style={{
-              width: location.size.width,
-              height: location.size.height,
-              backgroundColor: location.occupied ? '#EF444420' : '#F59E0B20',
-              border: `2px solid ${location.occupied ? '#EF4444' : '#F59E0B'}`,
-            }}
-            className="rounded flex items-center justify-center relative group"
-          >
-            <MapPin className="w-3 h-3 text-gray-400" />
-            <div className="absolute -bottom-5 left-0 right-0 flex justify-center">
-              <span className="text-[10px] font-medium text-gray-600 bg-white px-1 rounded">
-                {location.code}
-              </span>
-            </div>
-          </div>
-        );
-      }
+  const setRefs = (element: HTMLDivElement | null) => {
+    setDragRef(element);
+    if (canHaveChildren) {
+      setDropRef(element);
     }
   };
 
+  const getColor = () => {
+    switch (component.type) {
+      case 'warehouse': return { bg: '#F3F4F6', border: '#6B7280' };
+      case 'zone': return { bg: ZONE_COLORS[component.category] + '20', border: ZONE_COLORS[component.category] };
+      case 'aisle': return { bg: '#10B98120', border: '#10B981' };
+      case 'level': return { bg: '#8B5CF620', border: '#8B5CF6' };
+      case 'rack': return { bg: '#6366F120', border: '#6366F1' };
+      case 'location': 
+        const loc = component;
+        return { bg: loc.occupied ? '#EF444420' : '#F59E0B20', border: loc.occupied ? '#EF4444' : '#F59E0B' };
+      case 'pallet': return { bg: '#F59E0B30', border: '#F59E0B' };
+    }
+  };
+
+  const renderIcon = () => {
+    const iconClass = "text-gray-600";
+    const size = 18;
+    
+    switch (component.type) {
+      case 'warehouse': return <Building2 className={iconClass} size={size} />;
+      case 'zone': return <Square className={iconClass} size={size} />;
+      case 'aisle': return <Minus className={iconClass} size={size} />;
+      case 'level': return <Layers className={iconClass} size={size} />;
+      case 'rack': return <Package className={iconClass} size={size} />;
+      case 'location': return <MapPin className={iconClass} size={size} />;
+      case 'pallet': return <Box className={iconClass} size={size} />;
+    }
+  };
+
+  const getLabel = () => {
+    switch (component.type) {
+      case 'warehouse':
+      case 'zone':
+        return component.name;
+      case 'aisle':
+      case 'rack':
+      case 'location':
+        return component.code;
+      case 'level':
+        return `N${component.levelNumber}`;
+      case 'pallet':
+        return component.palletId;
+      default:
+        return component.name;
+    }
+  };
+
+  const colors = getColor();
+  const hasChildren = canHaveChildren;
+
   return (
     <div
+      ref={setRefs}
+      {...listeners}
+      {...attributes}
       onClick={(e) => {
         e.stopPropagation();
         onClick();
+      }}
+      onDoubleClick={(e) => {
+        e.stopPropagation();
+        if (onDoubleClick) onDoubleClick();
       }}
       style={{
         position: 'absolute',
         left: component.position.x,
         top: component.position.y,
+        width: component.size.width,
+        height: component.size.height,
         transform: `rotate(${component.rotation}deg)`,
-        cursor: 'pointer',
-        zIndex: isSelected ? 10 : 1,
+        cursor: isDragging ? 'grabbing' : hasChildren ? 'pointer' : 'grab',
+        zIndex: isSelected ? 100 : 10 + getDepth(component.type) * 5,
+        backgroundColor: colors.bg,
+        border: `${(isOver || isDraggedOver) ? '4' : isSelected ? '3' : '2'}px solid ${(isOver || isDraggedOver) ? '#10B981' : colors.border}`,
+        opacity: isDragging ? 0.5 : 1,
       }}
-      className={`transition-all ${
-        isSelected ? 'ring-4 ring-blue-500 ring-opacity-50' : 'hover:ring-2 hover:ring-blue-300'
-      }`}
+      className={`rounded-lg flex flex-col items-center justify-center relative transition-all
+        ${isSelected ? 'shadow-lg' : 'shadow'}
+        ${hasChildren ? 'hover:shadow-md' : ''}
+      `}
     >
-      {renderComponent()}
+      {/* Icône */}
+      <div className="mb-1">
+        {renderIcon()}
+      </div>
 
-      {/* Actions (visible on selection) */}
+      {/* Label */}
+      <div className="text-sm font-medium text-gray-800 truncate max-w-full px-2">
+        {getLabel()}
+      </div>
+
+      {/* Badge "Double-clic" si a des enfants */}
+      {hasChildren && !isDragging && (
+        <div className="absolute bottom-1 right-1 text-xs bg-gray-800 text-white px-2 py-0.5 rounded-full opacity-70">
+          ⏎
+        </div>
+      )}
+
+      {/* Drop indicator */}
+      {(isOver || isDraggedOver) && hasChildren && (
+        <div className="absolute inset-0 flex items-center justify-center bg-green-400 bg-opacity-20 rounded-lg border-4 border-green-400 border-dashed">
+          <div className="text-sm font-bold text-green-900 bg-green-100 px-3 py-1 rounded-full">
+            Déposer ici
+          </div>
+        </div>
+      )}
+
+      {/* Actions */}
       {isSelected && (
         <div
-          className="absolute -top-10 left-0 right-0 flex items-center justify-center space-x-1"
-          style={{ transform: `scale(${1 / zoom})` }}
+          className="absolute -top-12 left-1/2 transform -translate-x-1/2 flex items-center space-x-2 bg-white rounded-lg shadow-xl p-1 border border-gray-300"
+          onClick={(e) => e.stopPropagation()}
         >
           <button
             onClick={(e) => {
               e.stopPropagation();
               onRotate();
             }}
-            className="p-1.5 bg-white border border-gray-300 rounded hover:bg-gray-50"
+            className="p-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
             title="Pivoter 90°"
           >
-            <RotateCw className="w-3 h-3" />
+            <RotateCw className="w-4 h-4" />
           </button>
           <button
             onClick={(e) => {
               e.stopPropagation();
               onDelete();
             }}
-            className="p-1.5 bg-white border border-red-300 rounded hover:bg-red-50 text-red-600"
+            className="p-2 bg-red-500 text-white rounded-md hover:bg-red-600"
             title="Supprimer"
           >
-            <Trash2 className="w-3 h-3" />
+            <Trash2 className="w-4 h-4" />
           </button>
         </div>
       )}

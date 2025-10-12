@@ -1,9 +1,12 @@
 import { useState, useCallback } from 'react';
+import { DndContext, DragEndEvent, DragStartEvent, DragOverlay, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import ComponentPalette from './ComponentPalette';
 import Toolbar from './Toolbar';
 import WarehouseCanvas from './WarehouseCanvas';
+import HierarchyPanel from './HierarchyPanel';
+import BreadcrumbNav from './BreadcrumbNav';
 import type { WarehouseComponent, ComponentType, WarehouseLayout } from '../../lib/warehouse';
-import { generateId, snapToGrid, ZONE_COLORS } from '../../lib/warehouse';
+import { generateId, snapToGrid, ZONE_COLORS, DEFAULT_SIZES, canBeChildOf, getDepth, generateCode, HIERARCHY_RULES } from '../../lib/warehouse';
 
 interface WarehouseEditorProps {
   initialLayout?: WarehouseLayout;
@@ -19,10 +22,40 @@ export default function WarehouseEditor({ initialLayout, onSave }: WarehouseEdit
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showGrid, setShowGrid] = useState(true);
   const [zoom, setZoom] = useState(1);
+  const [draggedComponent, setDraggedComponent] = useState<WarehouseComponent | null>(null);
+  const [overId, setOverId] = useState<string | null>(null);
+  const [currentViewId, setCurrentViewId] = useState<string | null>(null);
   
+
+  // Filtrer les composants selon la vue actuelle
+  const getVisibleComponents = useCallback(() => {
+    if (!currentViewId) {
+      // Vue racine : afficher tous les composants sans parent
+      return components.filter(c => !c.parentId);
+    } else {
+      // Vue d'un composant : afficher ses enfants directs
+      return components.filter(c => c.parentId === currentViewId);
+    }
+  }, [components, currentViewId]);
+
+  const visibleComponents = getVisibleComponents();
+
+
+  // Filtrer les composants selon la vue actuelle
+
+
   // Undo/Redo
   const [history, setHistory] = useState<WarehouseComponent[][]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
+
+  // Drag & Drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // 8px de mouvement avant d'activer le drag
+      },
+    })
+  );
 
   // Save to history
   const saveToHistory = useCallback((newComponents: WarehouseComponent[]) => {
@@ -48,63 +81,217 @@ export default function WarehouseEditor({ initialLayout, onSave }: WarehouseEdit
     }
   }, [history, historyIndex]);
 
-  // Add component
-  const handleCanvasClick = useCallback((x: number, y: number) => {
-    if (!selectedType) return;
-
-    let newComponent: WarehouseComponent;
+  // Create new component
+  const createComponent = useCallback((
+    type: ComponentType,
+    x: number,
+    y: number,
+    parentId: string | null = null
+  ): WarehouseComponent => {
     const id = generateId();
+    const size = DEFAULT_SIZES[type];
+    const count = components.filter(c => c.type === type).length;
+    
+    const baseComponent = {
+      id,
+      type,
+      name: `${type.charAt(0).toUpperCase() + type.slice(1)} ${count + 1}`,
+      position: { x: snapToGrid(x), y: snapToGrid(y) },
+      size,
+      rotation: 0,
+      parentId,
+      depth: getDepth(type),
+    };
 
-    switch (selectedType) {
+    switch (type) {
+      case 'warehouse':
+        return {
+          ...baseComponent,
+          type: 'warehouse',
+          totalArea: size.width * size.height,
+        };
+
       case 'zone':
-        newComponent = {
-          id,
+        return {
+          ...baseComponent,
           type: 'zone',
-          name: `Zone ${components.filter(c => c.type === 'zone').length + 1}`,
-          position: { x, y },
-          size: { width: 200, height: 150 },
-          rotation: 0,
           color: ZONE_COLORS.storage,
           category: 'storage',
         };
-        break;
 
       case 'aisle':
-        newComponent = {
-          id,
+        return {
+          ...baseComponent,
           type: 'aisle',
-          name: `Allée ${String.fromCharCode(65 + components.filter(c => c.type === 'aisle').length)}`,
-          code: `A${components.filter(c => c.type === 'aisle').length + 1}`,
-          position: { x, y },
-          size: { width: 100, height: 20 },
-          rotation: 0,
-          zoneId: null,
+          code: generateCode('aisle', count),
           direction: 'horizontal',
+          width: 100,
         };
-        break;
+
+      case 'level':
+        return {
+          ...baseComponent,
+          type: 'level',
+          levelNumber: count + 1,
+          height: 250,
+        };
+
+      case 'rack':
+        return {
+          ...baseComponent,
+          type: 'rack',
+          code: generateCode('rack', count),
+          bays: 3,
+          depth: 80,
+        };
 
       case 'location':
-        newComponent = {
-          id,
+        return {
+          ...baseComponent,
           type: 'location',
-          name: `Emplacement ${components.filter(c => c.type === 'location').length + 1}`,
-          code: `L${String(components.filter(c => c.type === 'location').length + 1).padStart(3, '0')}`,
-          position: { x, y },
-          size: { width: 40, height: 40 },
-          rotation: 0,
-          aisleId: null,
+          code: generateCode('location', count),
           capacity: 1,
           occupied: false,
         };
-        break;
+
+      case 'pallet':
+        return {
+          ...baseComponent,
+          type: 'pallet',
+          palletId: generateCode('pallet', count),
+          palletType: 'standard',
+          status: 'empty',
+        };
+
+      default:
+        return baseComponent as WarehouseComponent;
+    }
+  }, [components]);
+
+  // Drag start
+  const handleDragStart = (event: DragStartEvent) => {
+    const { active } = event;
+    
+    // Si on drag depuis la palette (pas d'id existant)
+    if (typeof active.id === 'string' && active.id.startsWith('palette-')) {
+      const type = active.id.replace('palette-', '') as ComponentType;
+      setSelectedType(type);
+      setDraggedComponent(createComponent(type, 0, 0));
+    } else {
+      // On drag un composant existant
+      const component = components.find(c => c.id === active.id);
+      if (component) {
+        setDraggedComponent(component);
+      }
+    }
+  };
+
+  // Drag end
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over, delta } = event;
+    
+    setDraggedComponent(null);
+    
+    if (!over) {
+      setSelectedType(null);
+      return;
     }
 
+    // Drag depuis la palette
+    if (typeof active.id === 'string' && active.id.startsWith('palette-')) {
+      const type = active.id.replace('palette-', '') as ComponentType;
+      
+      // Vérifier si on drop sur un parent compatible
+      let parentId: string | null = null;
+      let x = 0;
+      let y = 0;
+      
+      if (over.id !== 'canvas') {
+        const parent = components.find(c => c.id === over.id);
+        if (parent && canBeChildOf(type, parent.type)) {
+          parentId = parent.id;
+          // Position relative au parent
+          x = parent.position.x + 20;
+          y = parent.position.y + 20;
+        } else {
+          // Drop invalide
+          setSelectedType(null);
+          return;
+        }
+      } else {
+        // Drop sur le canvas - calculer la position
+        const canvasElement = document.querySelector('[data-canvas="true"]');
+        if (!canvasElement) return;
+        
+        const rect = canvasElement.getBoundingClientRect();
+        const pointerEvent = event.activatorEvent as PointerEvent;
+        x = (pointerEvent.clientX - rect.left) / zoom;
+        y = (pointerEvent.clientY - rect.top) / zoom;
+      }
+
+      const newComponent = createComponent(type, x, y, parentId);
+      const newComponents = [...components, newComponent];
+      setComponents(newComponents);
+      saveToHistory(newComponents);
+      setSelectedType(null);
+      setSelectedId(newComponent.id);
+      
+    } else {
+      // Déplacer un composant existant
+      const componentId = active.id as string;
+      const component = components.find(c => c.id === componentId);
+      
+      if (component) {
+        // Vérifier si on drop sur un parent compatible
+        let newParentId = component.parentId;
+        if (over.id !== 'canvas' && over.id !== componentId) {
+          const parent = components.find(c => c.id === over.id);
+          if (parent && canBeChildOf(component.type, parent.type)) {
+            newParentId = parent.id;
+          }
+        }
+
+        const newComponents = components.map(c => {
+          if (c.id === componentId) {
+            return {
+              ...c,
+              position: {
+                x: snapToGrid(c.position.x + delta.x / zoom),
+                y: snapToGrid(c.position.y + delta.y / zoom),
+              },
+              parentId: newParentId,
+            };
+          }
+          return c;
+        });
+        setComponents(newComponents);
+        saveToHistory(newComponents);
+      }
+    }
+  };
+
+  // Add component by click
+  const handleCanvasClick = useCallback((x: number, y: number) => {
+    if (!selectedType) return;
+
+    const newComponent = createComponent(selectedType, x, y);
     const newComponents = [...components, newComponent];
     setComponents(newComponents);
     saveToHistory(newComponents);
     setSelectedType(null);
     setSelectedId(newComponent.id);
-  }, [selectedType, components, saveToHistory]);
+  }, [selectedType, components, createComponent, saveToHistory]);
+
+
+  // Double-clic pour entrer dans un composant
+  const handleComponentDoubleClick = useCallback((id: string) => {
+    const component = components.find(c => c.id === id);
+    if (component && HIERARCHY_RULES[component.type]?.length > 0) {
+      // Le composant peut avoir des enfants, on entre dedans
+      setCurrentViewId(id);
+      setSelectedId(null);
+    }
+  }, [components]);
 
   // Select component
   const handleComponentClick = useCallback((id: string) => {
@@ -201,46 +388,89 @@ export default function WarehouseEditor({ initialLayout, onSave }: WarehouseEdit
   }, [components, onSave]);
 
   return (
-    <div className="h-screen flex flex-col">
-      {/* Toolbar */}
-      <Toolbar
-        onUndo={handleUndo}
-        onRedo={handleRedo}
-        onZoomIn={() => setZoom(Math.min(2, zoom + 0.1))}
-        onZoomOut={() => setZoom(Math.max(0.2, zoom - 0.1))}
-        onExport={handleExport}
-        onImport={handleImport}
-        onSave={handleSave}
-        onClear={handleClear}
-        onToggleGrid={() => setShowGrid(!showGrid)}
-        canUndo={historyIndex > 0}
-        canRedo={historyIndex < history.length - 1}
-        showGrid={showGrid}
-        zoom={zoom}
-      />
-
-      {/* Main content */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Palette */}
-        <ComponentPalette
-          onSelectComponent={setSelectedType}
-          selectedType={selectedType}
-        />
-
-        {/* Canvas */}
-        <WarehouseCanvas
-          components={components}
-          selectedId={selectedId}
-          selectedType={selectedType}
+    <DndContext
+      sensors={sensors}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      onDragOver={(event) => setOverId(event.over?.id as string | null)}
+    >
+      <div className="h-screen flex flex-col">
+        {/* Toolbar */}
+        <Toolbar
+          onUndo={handleUndo}
+          onRedo={handleRedo}
+          onZoomIn={() => setZoom(Math.min(2, zoom + 0.1))}
+          onZoomOut={() => setZoom(Math.max(0.2, zoom - 0.1))}
+          onExport={handleExport}
+          onImport={handleImport}
+          onSave={handleSave}
+          onClear={handleClear}
+          onToggleGrid={() => setShowGrid(!showGrid)}
+          canUndo={historyIndex > 0}
+          canRedo={historyIndex < history.length - 1}
           showGrid={showGrid}
           zoom={zoom}
-          onZoomChange={setZoom}
-          onComponentClick={handleComponentClick}
-          onCanvasClick={handleCanvasClick}
-          onComponentDelete={handleComponentDelete}
-          onComponentRotate={handleComponentRotate}
         />
+
+        {/* Breadcrumb Navigation */}
+        <BreadcrumbNav
+          components={visibleComponents}
+          currentViewId={currentViewId}
+          onNavigate={setCurrentViewId}
+        />
+
+        {/* Main content */}
+        <div className="flex-1 flex overflow-hidden">
+          {/* Palette */}
+          <ComponentPalette
+            onSelectComponent={setSelectedType}
+            selectedType={selectedType}
+          />
+
+          {/* Canvas */}
+          <WarehouseCanvas
+            components={components}
+            selectedId={selectedId}
+            selectedType={selectedType}
+            showGrid={showGrid}
+            zoom={zoom}
+            onZoomChange={setZoom}
+            onComponentClick={handleComponentClick}
+            onComponentDoubleClick={handleComponentDoubleClick}
+            onCanvasClick={handleCanvasClick}
+            onComponentDelete={handleComponentDelete}
+            onComponentRotate={handleComponentRotate}
+            draggedComponent={draggedComponent}
+            overId={overId}
+          />
+
+          {/* Hierarchy Panel */}
+          <HierarchyPanel
+            components={components}
+            selectedId={selectedId}
+            onSelectComponent={handleComponentClick}
+            onDeleteComponent={handleComponentDelete}
+          />
+        </div>
       </div>
-    </div>
+
+      {/* Drag Overlay */}
+      <DragOverlay>
+        {draggedComponent ? (
+          <div
+            style={{
+              width: draggedComponent.size.width,
+              height: draggedComponent.size.height,
+              opacity: 0.7,
+            }}
+            className="bg-blue-200 border-2 border-blue-500 rounded-lg flex items-center justify-center"
+          >
+            <span className="text-sm font-medium text-blue-900">
+              {draggedComponent.name}
+            </span>
+          </div>
+        ) : null}
+      </DragOverlay>
+    </DndContext>
   );
 }

@@ -1,345 +1,513 @@
 import { useState } from 'react';
-import { useAuth } from '../hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
+import { Building2, MapPin, Layers, Package, Check, ArrowRight, ArrowLeft } from 'lucide-react';
 import { Button } from '../components/ui/Button';
-import { CheckCircle2, Package, MapPin, Rocket } from 'lucide-react';
-import { completeOnboarding } from '../lib/api';
 
-const STEPS = [
-  { id: 1, title: 'Bienvenue', icon: Rocket },
-  { id: 2, title: 'Entrepôt', icon: MapPin },
-  { id: 3, title: 'Premier Produit', icon: Package },
-  { id: 4, title: 'Terminé', icon: CheckCircle2 },
+interface OnboardingData {
+  warehouse: {
+    name: string;
+    address: string;
+    totalArea: number;
+    ceilingHeight: number;
+  };
+  zones: Array<{
+    id: string;
+    name: string;
+    category: 'receiving' | 'storage' | 'picking' | 'shipping' | 'cold';
+    area: number;
+    aisleCount: number;
+  }>;
+  aisleConfig: {
+    width: number;
+    rackCount: number;
+    levelsPerRack: number;
+    locationsPerLevel: number;
+  };
+}
+
+const ZONE_CATEGORIES = [
+  { value: 'receiving', label: 'Réception', color: 'bg-blue-500', icon: '📦' },
+  { value: 'storage', label: 'Stockage', color: 'bg-green-500', icon: '🏢' },
+  { value: 'picking', label: 'Picking', color: 'bg-yellow-500', icon: '🎯' },
+  { value: 'shipping', label: 'Expédition', color: 'bg-orange-500', icon: '🚚' },
+  { value: 'cold', label: 'Zone froide', color: 'bg-cyan-500', icon: '❄️' },
 ];
 
 export default function Onboarding() {
-  const [currentStep, setCurrentStep] = useState(1);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [warehouseName, setWarehouseName] = useState('');
-  const [productData, setProductData] = useState({
-    sku: '',
-    name: '',
-    description: '',
-    category: '',
-    unitPrice: '',
-    reorderPoint: '10',
+  const navigate = useNavigate();
+  const [step, setStep] = useState(1);
+  const [data, setData] = useState<OnboardingData>({
+    warehouse: {
+      name: '',
+      address: '',
+      totalArea: 0,
+      ceilingHeight: 0,
+    },
+    zones: [],
+    aisleConfig: {
+      width: 3,
+      rackCount: 20,
+      levelsPerRack: 4,
+      locationsPerLevel: 2,
+    },
   });
-  const { user } = useAuth();
+
+  useEffect(() => {
+    const stored = localStorage.getItem('warehouseConfig');
+    if (stored) {
+      const config = JSON.parse(stored);
+      setData(config);
+    }
+  }, []);
+
+  useEffect(() => {
+    const stored = localStorage.getItem('warehouseConfig');
+    if (stored) {
+      const config = JSON.parse(stored);
+      setData(config);
+    }
+  }, []);
+
+  const totalSteps = 5;
 
   const handleNext = () => {
-    if (currentStep < STEPS.length) {
-      setCurrentStep(currentStep + 1);
+    if (step < totalSteps) {
+      setStep(step + 1);
+    } else {
+      // Terminer l'onboarding et aller au dashboard
+      localStorage.setItem('warehouseConfig', JSON.stringify(data));
+      navigate('/warehouse-dashboard');
     }
   };
 
-  const handlePrevious = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
+  const handleBack = () => {
+    if (step > 1) setStep(step - 1);
+  };
+
+  const addZone = () => {
+    setData({
+      ...data,
+      zones: [
+        ...data.zones,
+        {
+          id: `zone-${Date.now()}`,
+          name: `Zone ${data.zones.length + 1}`,
+          category: 'storage',
+          area: 0,
+          aisleCount: 0,
+        },
+      ],
+    });
+  };
+
+  const removeZone = (id: string) => {
+    setData({
+      ...data,
+      zones: data.zones.filter(z => z.id !== id),
+    });
+  };
+
+  const updateZone = (id: string, field: string, value: any) => {
+    setData({
+      ...data,
+      zones: data.zones.map(z => 
+        z.id === id ? { ...z, [field]: value } : z
+      ),
+    });
+  };
+
+  const canProceed = () => {
+    switch (step) {
+      case 1:
+        return data.warehouse.name && data.warehouse.totalArea > 0;
+      case 2:
+        return data.zones.length > 0 && data.zones.every(z => z.area > 0 && z.aisleCount > 0);
+      case 3:
+        return data.aisleConfig.width > 0 && data.aisleConfig.rackCount > 0;
+      case 4:
+        return data.aisleConfig.levelsPerRack > 0 && data.aisleConfig.locationsPerLevel > 0;
+      default:
+        return true;
     }
   };
 
-  const handleComplete = async () => {
-    setIsLoading(true);
-    setError('');
-    
-    try {
-      await completeOnboarding({
-        warehouseName,
-        product: productData,
-      });
-      
-      // Forcer un rechargement complet pour mettre à jour le state
-      window.location.href = '/dashboard';
-    } catch (err: any) {
-      console.error('Erreur lors de la complétion de l\'onboarding:', err);
-      setError(err.message || 'Une erreur est survenue');
-      setIsLoading(false);
-    }
-  };
-
-  return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-4 py-4">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-black flex items-center justify-center">
-              <span className="text-white font-bold text-lg">1</span>
+  const renderStep = () => {
+    switch (step) {
+      case 1:
+        return (
+          <div className="space-y-6">
+            <div className="text-center mb-8">
+              <Building2 className="w-16 h-16 mx-auto text-blue-600 mb-4" />
+              <h2 className="text-2xl font-bold text-gray-900">Informations générales</h2>
+              <p className="text-gray-600 mt-2">Commençons par les informations de base de votre entrepôt</p>
             </div>
-            <span className="text-xl font-semibold">wms.io</span>
-          </div>
-          <div className="text-sm text-gray-500">
-            Étape {currentStep} sur {STEPS.length}
-          </div>
-        </div>
-      </header>
 
-      {/* Progress Bar */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-4xl mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
-            {STEPS.map((step, index) => (
-              <div key={step.id} className="flex items-center flex-1">
-                <div className="flex flex-col items-center flex-1">
-                  <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center border-2 ${
-                      currentStep >= step.id
-                        ? 'bg-blue-600 border-blue-600 text-white'
-                        : 'bg-white border-gray-300 text-gray-400'
-                    }`}
-                  >
-                    <step.icon className="w-5 h-5" />
-                  </div>
-                  <span
-                    className={`mt-2 text-xs font-medium ${
-                      currentStep >= step.id ? 'text-blue-600' : 'text-gray-400'
-                    }`}
-                  >
-                    {step.title}
-                  </span>
-                </div>
-                {index < STEPS.length - 1 && (
-                  <div
-                    className={`h-0.5 flex-1 mx-2 ${
-                      currentStep > step.id ? 'bg-blue-600' : 'bg-gray-300'
-                    }`}
-                  />
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Content */}
-      <main className="flex-1 flex items-center justify-center px-4 py-8">
-        <div className="max-w-2xl w-full bg-white rounded-lg shadow-sm border border-gray-200 p-8">
-          {/* Erreur */}
-          {error && (
-            <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-4">
-              <p className="text-sm text-red-800">{error}</p>
-            </div>
-          )}
-
-          {/* Step 1: Bienvenue */}
-          {currentStep === 1 && (
-            <div className="text-center">
-              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Rocket className="w-8 h-8 text-blue-600" />
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                Bienvenue sur 1wms.io, {user?.name} ! 👋
-              </h2>
-              <p className="text-gray-600 mb-6">
-                Nous sommes ravis de vous accompagner dans la gestion de votre entrepôt.
-                En quelques étapes simples, configurons ensemble votre espace de travail.
-              </p>
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                <p className="text-sm text-blue-800">
-                  <strong>Ce processus prend environ 2 minutes</strong> et vous permettra de :
-                </p>
-                <ul className="text-sm text-blue-700 mt-2 space-y-1 text-left list-disc list-inside">
-                  <li>Configurer votre premier entrepôt</li>
-                  <li>Ajouter votre premier produit</li>
-                  <li>Découvrir les fonctionnalités essentielles</li>
-                </ul>
-              </div>
-            </div>
-          )}
-
-          {/* Step 2: Configuration Entrepôt */}
-          {currentStep === 2 && (
             <div>
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <MapPin className="w-8 h-8 text-green-600" />
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Nom de l'entrepôt *
+              </label>
+              <input
+                type="text"
+                value={data.warehouse.name}
+                onChange={(e) => setData({ ...data, warehouse: { ...data.warehouse, name: e.target.value } })}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Ex: Entrepôt Principal Paris"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Adresse
+              </label>
+              <input
+                type="text"
+                value={data.warehouse.address}
+                onChange={(e) => setData({ ...data, warehouse: { ...data.warehouse, address: e.target.value } })}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Ex: 123 Rue de l'Industrie, 75001 Paris"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Surface totale (m²) *
+                </label>
+                <input
+                  type="number"
+                  value={data.warehouse.totalArea || ''}
+                  onChange={(e) => setData({ ...data, warehouse: { ...data.warehouse, totalArea: Number(e.target.value) } })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="5000"
+                />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2 text-center">
-                Configurez votre entrepôt
-              </h2>
-              <p className="text-gray-600 mb-6 text-center">
-                Donnez un nom à votre premier espace de stockage
-              </p>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Nom de l'entrepôt *
-                  </label>
-                  <input
-                    type="text"
-                    value={warehouseName}
-                    onChange={(e) => setWarehouseName(e.target.value)}
-                    placeholder="Ex: Entrepôt Principal"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Hauteur sous plafond (m)
+                </label>
+                <input
+                  type="number"
+                  step="0.5"
+                  value={data.warehouse.ceilingHeight || ''}
+                  onChange={(e) => setData({ ...data, warehouse: { ...data.warehouse, ceilingHeight: Number(e.target.value) } })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="8"
+                />
+              </div>
+            </div>
+          </div>
+        );
+
+      case 2:
+        return (
+          <div className="space-y-6">
+            <div className="text-center mb-8">
+              <MapPin className="w-16 h-16 mx-auto text-green-600 mb-4" />
+              <h2 className="text-2xl font-bold text-gray-900">Zones de l'entrepôt</h2>
+              <p className="text-gray-600 mt-2">Définissez les différentes zones de votre entrepôt</p>
+            </div>
+
+            <div className="space-y-4">
+              {data.zones.map((zone) => (
+                <div key={zone.id} className="p-4 border border-gray-200 rounded-lg bg-gray-50">
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Nom de la zone</label>
+                      <input
+                        type="text"
+                        value={zone.name}
+                        onChange={(e) => updateZone(zone.id, 'name', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        placeholder="Zone Réception"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
+                      <select
+                        value={zone.category}
+                        onChange={(e) => updateZone(zone.id, 'category', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      >
+                        {ZONE_CATEGORIES.map(cat => (
+                          <option key={cat.value} value={cat.value}>
+                            {cat.icon} {cat.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Surface (m²)</label>
+                      <input
+                        type="number"
+                        value={zone.area || ''}
+                        onChange={(e) => updateZone(zone.id, 'area', Number(e.target.value))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        placeholder="500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Nombre d'allées</label>
+                      <input
+                        type="number"
+                        value={zone.aisleCount || ''}
+                        onChange={(e) => updateZone(zone.id, 'aisleCount', Number(e.target.value))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        placeholder="8"
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => removeZone(zone.id)}
+                    className="mt-3 text-sm text-red-600 hover:text-red-800"
+                  >
+                    Supprimer cette zone
+                  </button>
                 </div>
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                  <p className="text-sm text-gray-600">
-                    💡 <strong>Conseil :</strong> Vous pourrez créer d'autres entrepôts et zones plus tard.
+              ))}
+            </div>
+
+            <button
+              onClick={addZone}
+              className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-blue-500 hover:text-blue-600 transition-colors"
+            >
+              + Ajouter une zone
+            </button>
+          </div>
+        );
+
+      case 3:
+        return (
+          <div className="space-y-6">
+            <div className="text-center mb-8">
+              <Layers className="w-16 h-16 mx-auto text-purple-600 mb-4" />
+              <h2 className="text-2xl font-bold text-gray-900">Configuration des allées</h2>
+              <p className="text-gray-600 mt-2">Définissez la structure de vos allées</p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Largeur de passage (m)
+                </label>
+                <input
+                  type="number"
+                  step="0.5"
+                  value={data.aisleConfig.width}
+                  onChange={(e) => setData({ ...data, aisleConfig: { ...data.aisleConfig, width: Number(e.target.value) } })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="3"
+                />
+                <p className="text-xs text-gray-500 mt-1">Largeur typique : 2.5-3.5m</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Racks par allée
+                </label>
+                <input
+                  type="number"
+                  value={data.aisleConfig.rackCount}
+                  onChange={(e) => setData({ ...data, aisleConfig: { ...data.aisleConfig, rackCount: Number(e.target.value) } })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="20"
+                />
+                <p className="text-xs text-gray-500 mt-1">Nombre de racks de chaque côté</p>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 4:
+        return (
+          <div className="space-y-6">
+            <div className="text-center mb-8">
+              <Package className="w-16 h-16 mx-auto text-indigo-600 mb-4" />
+              <h2 className="text-2xl font-bold text-gray-900">Racks et emplacements</h2>
+              <p className="text-gray-600 mt-2">Définissez la capacité de stockage</p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Niveaux par rack
+                </label>
+                <input
+                  type="number"
+                  value={data.aisleConfig.levelsPerRack}
+                  onChange={(e) => setData({ ...data, aisleConfig: { ...data.aisleConfig, levelsPerRack: Number(e.target.value) } })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="4"
+                />
+                <p className="text-xs text-gray-500 mt-1">Nombre d'étages de stockage</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Emplacements par niveau
+                </label>
+                <input
+                  type="number"
+                  value={data.aisleConfig.locationsPerLevel}
+                  onChange={(e) => setData({ ...data, aisleConfig: { ...data.aisleConfig, locationsPerLevel: Number(e.target.value) } })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="2"
+                />
+                <p className="text-xs text-gray-500 mt-1">Palettes par niveau</p>
+              </div>
+            </div>
+
+            {/* Calcul automatique */}
+            <div className="mt-8 p-6 bg-blue-50 border border-blue-200 rounded-lg">
+              <h3 className="font-semibold text-blue-900 mb-4">📊 Capacité totale estimée</h3>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p className="text-gray-600">Emplacements par allée :</p>
+                  <p className="text-2xl font-bold text-blue-900">
+                    {data.aisleConfig.rackCount * 2 * data.aisleConfig.levelsPerRack * data.aisleConfig.locationsPerLevel}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-gray-600">Capacité totale :</p>
+                  <p className="text-2xl font-bold text-blue-900">
+                    {data.zones.reduce((sum, z) => sum + z.aisleCount, 0) * 
+                     data.aisleConfig.rackCount * 2 * data.aisleConfig.levelsPerRack * data.aisleConfig.locationsPerLevel} palettes
                   </p>
                 </div>
               </div>
             </div>
-          )}
+          </div>
+        );
 
-          {/* Step 3: Premier Produit */}
-          {currentStep === 3 && (
-            <div>
-              <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Package className="w-8 h-8 text-purple-600" />
+      case 5:
+        const totalCapacity = data.zones.reduce((sum, z) => sum + z.aisleCount, 0) * 
+          data.aisleConfig.rackCount * 2 * data.aisleConfig.levelsPerRack * data.aisleConfig.locationsPerLevel;
+
+        return (
+          <div className="space-y-6">
+            <div className="text-center mb-8">
+              <Check className="w-16 h-16 mx-auto text-green-600 mb-4" />
+              <h2 className="text-2xl font-bold text-gray-900">Récapitulatif</h2>
+              <p className="text-gray-600 mt-2">Vérifiez les informations avant de finaliser</p>
+            </div>
+
+            <div className="space-y-4">
+              {/* Entrepôt */}
+              <div className="p-6 bg-gray-50 rounded-lg border border-gray-200">
+                <h3 className="font-semibold text-gray-900 mb-4 flex items-center">
+                  <Building2 className="w-5 h-5 mr-2" />
+                  {data.warehouse.name}
+                </h3>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-gray-600">Surface totale</p>
+                    <p className="font-medium">{data.warehouse.totalArea} m²</p>
+                  </div>
+                  {data.warehouse.ceilingHeight > 0 && (
+                    <div>
+                      <p className="text-gray-600">Hauteur plafond</p>
+                      <p className="font-medium">{data.warehouse.ceilingHeight} m</p>
+                    </div>
+                  )}
+                </div>
               </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2 text-center">
-                Ajoutez votre premier produit
-              </h2>
-              <p className="text-gray-600 mb-6 text-center">
-                Commencez à construire votre catalogue
-              </p>
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      SKU / Référence *
-                    </label>
-                    <input
-                      type="text"
-                      value={productData.sku}
-                      onChange={(e) => setProductData({ ...productData, sku: e.target.value })}
-                      placeholder="Ex: PROD-001"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Catégorie
-                    </label>
-                    <input
-                      type="text"
-                      value={productData.category}
-                      onChange={(e) => setProductData({ ...productData, category: e.target.value })}
-                      placeholder="Ex: Électronique"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
+
+              {/* Zones */}
+              <div className="p-6 bg-gray-50 rounded-lg border border-gray-200">
+                <h3 className="font-semibold text-gray-900 mb-4">{data.zones.length} Zone(s)</h3>
+                <div className="space-y-3">
+                  {data.zones.map((zone) => {
+                    const cat = ZONE_CATEGORIES.find(c => c.value === zone.category);
+                    return (
+                      <div key={zone.id} className="flex items-center justify-between text-sm">
+                        <span className="font-medium">
+                          {cat?.icon} {zone.name}
+                        </span>
+                        <span className="text-gray-600">
+                          {zone.area} m² • {zone.aisleCount} allées
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Nom du produit *
-                  </label>
-                  <input
-                    type="text"
-                    value={productData.name}
-                    onChange={(e) => setProductData({ ...productData, name: e.target.value })}
-                    placeholder="Ex: Ordinateur Portable Dell XPS 15"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Description
-                  </label>
-                  <textarea
-                    value={productData.description}
-                    onChange={(e) => setProductData({ ...productData, description: e.target.value })}
-                    placeholder="Décrivez votre produit..."
-                    rows={3}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Prix unitaire (€)
-                    </label>
-                    <input
-                      type="number"
-                      value={productData.unitPrice}
-                      onChange={(e) => setProductData({ ...productData, unitPrice: e.target.value })}
-                      placeholder="0.00"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Point de réapprovisionnement
-                    </label>
-                    <input
-                      type="number"
-                      value={productData.reorderPoint}
-                      onChange={(e) => setProductData({ ...productData, reorderPoint: e.target.value })}
-                      placeholder="10"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                </div>
+              </div>
+
+              {/* Capacité */}
+              <div className="p-6 bg-green-50 rounded-lg border border-green-200">
+                <h3 className="font-semibold text-green-900 mb-4">📦 Capacité totale</h3>
+                <p className="text-4xl font-bold text-green-900">{totalCapacity.toLocaleString()}</p>
+                <p className="text-green-700 mt-1">emplacements de palettes</p>
               </div>
             </div>
-          )}
+          </div>
+        );
 
-          {/* Step 4: Terminé */}
-          {currentStep === 4 && (
-            <div className="text-center">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <CheckCircle2 className="w-8 h-8 text-green-600" />
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                Félicitations ! 🎉
-              </h2>
-              <p className="text-gray-600 mb-6">
-                Votre espace de travail est prêt. Vous pouvez maintenant accéder à toutes les fonctionnalités de 1wms.io.
-              </p>
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
-                <p className="text-sm font-medium text-blue-900 mb-3">
-                  Ce que vous pouvez faire maintenant :
-                </p>
-                <ul className="text-sm text-blue-800 space-y-2 text-left">
-                  <li className="flex items-start">
-                    <span className="text-blue-600 mr-2">✓</span>
-                    <span>Ajouter d'autres produits (manuellement ou par import CSV)</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-blue-600 mr-2">✓</span>
-                    <span>Gérer votre inventaire en temps réel</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-blue-600 mr-2">✓</span>
-                    <span>Créer des commandes clients et fournisseurs</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-blue-600 mr-2">✓</span>
-                    <span>Suivre les mouvements de stock</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          )}
+      default:
+        return null;
+    }
+  };
 
-          {/* Navigation Buttons */}
-          <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-200">
-            <Button
-              variant="ghost"
-              onClick={handlePrevious}
-              disabled={currentStep === 1 || isLoading}
-            >
-              Précédent
-            </Button>
-            {currentStep < STEPS.length ? (
-              <Button
-                onClick={handleNext}
-                disabled={
-                  (currentStep === 2 && !warehouseName) ||
-                  (currentStep === 3 && (!productData.sku || !productData.name)) ||
-                  isLoading
-                }
-              >
-                Suivant
-              </Button>
-            ) : (
-              <Button onClick={handleComplete} disabled={isLoading}>
-                {isLoading ? 'Enregistrement...' : 'Accéder au Dashboard'}
-              </Button>
-            )}
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 py-12 px-4">
+      <div className="max-w-3xl mx-auto">
+        {/* Progress bar */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-gray-700">
+              Étape {step} sur {totalSteps}
+            </span>
+            <span className="text-sm font-medium text-gray-700">
+              {Math.round((step / totalSteps) * 100)}%
+            </span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div
+              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+              style={{ width: `${(step / totalSteps) * 100}%` }}
+            />
           </div>
         </div>
-      </main>
+
+        {/* Card */}
+        <div className="bg-white rounded-2xl shadow-xl p-8">
+          {renderStep()}
+
+          {/* Navigation */}
+          <div className="flex justify-between mt-8 pt-6 border-t border-gray-200">
+            <Button
+              variant="secondary"
+              onClick={handleBack}
+              disabled={step === 1}
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Précédent
+            </Button>
+
+            <Button
+              onClick={handleNext}
+              disabled={!canProceed()}
+            >
+              {step === totalSteps ? (
+                <>
+                  Terminer
+                  <Check className="w-4 h-4 ml-2" />
+                </>
+              ) : (
+                <>
+                  Suivant
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
