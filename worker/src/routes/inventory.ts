@@ -1,233 +1,263 @@
 import { Hono } from 'hono';
 import { drizzle } from 'drizzle-orm/d1';
-import { eq, sql } from 'drizzle-orm';
-import { inventory, products, locations, stockMovements } from '../../../db/schema';
-import { verifyToken } from '../utils/jwt';
+import { eq, and, sql } from 'drizzle-orm';
+import { inventory, stockMovements, products, locations } from '../../../db/schema';
 
-const inventoryRouter = new Hono();
+const app = new Hono<{
+  Bindings: {
+    DB: D1Database;
+  };
+}>();
 
-// Middleware d'authentification
-inventoryRouter.use('/*', async (c, next) => {
-  const authHeader = c.req.header('Authorization');
-  if (!authHeader) {
-    return c.json({ error: 'Non autorisé' }, 401);
-  }
-  const token = authHeader.substring(7);
-  const payload = await verifyToken(token, c.env.JWT_SECRET);
-  if (!payload) {
-    return c.json({ error: 'Token invalide' }, 401);
-  }
-  c.set('userId', payload.userId);
-  c.set('organizationId', payload.organizationId);
-  await next();
-});
-
-// GET /api/inventory - Liste du stock par produit
-inventoryRouter.get('/', async (c) => {
+// GET /api/inventory - Vue globale du stock
+app.get('/', async (c) => {
   try {
-    const organizationId = c.get('organizationId');
     const db = drizzle(c.env.DB);
-
-    const result = await db
-      .select({
-        productId: products.id,
-        sku: products.sku,
-        name: products.name,
-        category: products.category,
-        reorderPoint: products.reorderPoint,
-        totalQuantity: sql<number>`COALESCE(SUM(${inventory.quantity}), 0)`,
-      })
-      .from(products)
-      .leftJoin(inventory, eq(products.id, inventory.productId))
-      .where(eq(products.organizationId, organizationId))
-      .groupBy(products.id)
-      .all();
-
-    return c.json(result, 200);
-  } catch (error) {
-    console.error('Erreur GET /api/inventory:', error);
-    return c.json({ error: 'Erreur serveur' }, 500);
-  }
-});
-
-// GET /api/inventory/:productId - Détails du stock d'un produit par emplacement
-inventoryRouter.get('/:productId', async (c) => {
-  try {
-    const organizationId = c.get('organizationId');
-    const productId = parseInt(c.req.param('productId'));
-    const db = drizzle(c.env.DB);
-
-    const result = await db
-      .select({
-        id: inventory.id,
-        productId: inventory.productId,
-        locationId: inventory.locationId,
-        locationName: locations.name,
-        locationCode: locations.code,
-        quantity: inventory.quantity,
-        updatedAt: inventory.updatedAt,
-      })
+    
+    // Pour l'instant, retourner une liste vide car pas de stock
+    const items = await db
+      .select()
       .from(inventory)
-      .innerJoin(locations, eq(inventory.locationId, locations.id))
-      .where(eq(inventory.productId, productId))
       .all();
-
-    return c.json(result, 200);
+    
+    return c.json({ items: items || [] });
   } catch (error) {
-    console.error('Erreur GET /api/inventory/:productId:', error);
-    return c.json({ error: 'Erreur serveur' }, 500);
+    console.error('Error fetching inventory:', error);
+    return c.json({ error: 'Failed to fetch inventory' }, 500);
   }
 });
 
-// POST /api/inventory/adjust - Ajuster le stock
-inventoryRouter.post('/adjust', async (c) => {
+// POST /api/inventory/receive - Réception de marchandise
+app.post('/receive', async (c) => {
   try {
-    const organizationId = c.get('organizationId');
-    const userId = c.get('userId');
-    const body = await c.req.json();
-    const { productId, locationId, quantity, type, notes } = body;
-
-    // Validation des champs obligatoires
-    if (!productId || !locationId || quantity === undefined || !type) {
-      return c.json({ error: 'Champs manquants' }, 400);
-    }
-
-    // Validation du type
-    if (!['in', 'out', 'adjustment'].includes(type)) {
-      return c.json({ error: 'Type invalide. Doit être: in, out ou adjustment' }, 400);
-    }
-
-    // Validation de la quantité
-    const qty = parseInt(quantity);
-    if (isNaN(qty) || qty < 0) {
-      return c.json({ error: 'La quantité doit être un nombre positif' }, 400);
-    }
-
     const db = drizzle(c.env.DB);
-
-    // Vérifier si l'inventaire existe déjà
+    const body = await c.req.json();
+    
+    // Vérifier si le stock existe déjà pour ce produit/emplacement
     const existingInventory = await db
       .select()
       .from(inventory)
       .where(
-        sql`${inventory.productId} = ${productId} AND ${inventory.locationId} = ${locationId}`
+        and(
+          eq(inventory.product_id, body.productId),
+          eq(inventory.location_id, body.locationId)
+        )
       )
       .get();
-
-    let newQuantity = 0;
-
-    // 🔥 CORRECTION PRINCIPALE : Gérer correctement chaque type d'opération
+    
     if (existingInventory) {
-      const currentQuantity = existingInventory.quantity;
-
-      switch (type) {
-        case 'in':
-          // Entrée : AJOUTER la quantité
-          newQuantity = currentQuantity + qty;
-          break;
-        case 'out':
-          // Sortie : SOUSTRAIRE la quantité
-          newQuantity = currentQuantity - qty;
-          // Empêcher le stock négatif
-          if (newQuantity < 0) {
-            return c.json({ 
-              error: `Stock insuffisant. Stock actuel: ${currentQuantity}, sortie demandée: ${qty}` 
-            }, 400);
-          }
-          break;
-        case 'adjustment':
-          // Ajustement : REMPLACER par la nouvelle quantité
-          newQuantity = qty;
-          break;
-      }
-
-      // Mettre à jour l'inventaire existant
+      // Mettre à jour le stock existant
       await db
         .update(inventory)
         .set({
-          quantity: newQuantity,
-          updatedAt: new Date().toISOString(),
+          quantity_on_hand: existingInventory.quantity_on_hand + body.quantity,
+          quantity_available: existingInventory.quantity_available + body.quantity,
+          last_movement_date: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         })
-        .where(eq(inventory.id, existingInventory.id))
-        .run();
+        .where(eq(inventory.id, existingInventory.id));
     } else {
-      // Pas d'inventaire existant
-      if (type === 'out') {
-        return c.json({ 
-          error: 'Impossible de faire une sortie : aucun stock existant' 
-        }, 400);
-      }
-
-      // Pour 'in' et 'adjustment', créer un nouvel enregistrement
-      newQuantity = qty;
-      
-      await db
-        .insert(inventory)
-        .values({
-          organizationId,
-          productId,
-          locationId,
-          quantity: newQuantity,
-        })
-        .run();
+      // Créer un nouveau stock
+      await db.insert(inventory).values({
+        organization_id: 1,
+        product_id: body.productId,
+        location_id: body.locationId,
+        quantity_on_hand: body.quantity,
+        quantity_available: body.quantity,
+        quantity_reserved: 0,
+        lot_number: body.lotNumber || null,
+        status: 'available',
+        received_date: new Date().toISOString(),
+        last_movement_date: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
     }
-
-    // Enregistrer le mouvement de stock
-    await db
-      .insert(stockMovements)
-      .values({
-        organizationId,
-        productId,
-        locationId,
-        userId,
-        type,
-        quantity: qty,
-        notes: notes || null,
-      })
-      .run();
-
+    
+    // Enregistrer le mouvement
+    await db.insert(stockMovements).values({
+      organization_id: 1,
+      type: 'RECEIVE',
+      product_id: body.productId,
+      from_location_id: null,
+      to_location_id: body.locationId,
+      quantity: body.quantity,
+      lot_number: body.lotNumber || null,
+      user_id: 1,
+      reason: body.reason || 'Réception marchandise',
+      reference: body.reference || body.poNumber || null,
+      created_at: new Date().toISOString()
+    });
+    
     return c.json({ 
-      message: 'Stock ajusté avec succès', 
-      newQuantity,
-      type,
-      quantityChanged: qty
-    }, 200);
+      message: 'Stock received successfully',
+      quantity: body.quantity 
+    });
   } catch (error) {
-    console.error('Erreur POST /api/inventory/adjust:', error);
-    return c.json({ error: 'Erreur serveur' }, 500);
+    console.error('Error receiving stock:', error);
+    return c.json({ error: 'Failed to receive stock', details: error.message }, 500);
   }
 });
 
-// GET /api/inventory/movements/list - Historique des mouvements
-inventoryRouter.get('/movements/list', async (c) => {
+// POST /api/inventory/move - Déplacement de stock
+app.post('/move', async (c) => {
   try {
-    const organizationId = c.get('organizationId');
     const db = drizzle(c.env.DB);
-
-    const result = await db
-      .select({
-        id: stockMovements.id,
-        type: stockMovements.type,
-        quantity: stockMovements.quantity,
-        notes: stockMovements.notes,
-        createdAt: stockMovements.createdAt,
-        productSku: products.sku,
-        productName: products.name,
-        locationName: locations.name,
+    const body = await c.req.json();
+    
+    // Récupérer le stock source
+    const sourceInventory = await db
+      .select()
+      .from(inventory)
+      .where(eq(inventory.id, body.fromInventoryId))
+      .get();
+    
+    if (!sourceInventory || sourceInventory.quantity_available < body.quantity) {
+      return c.json({ error: 'Insufficient stock' }, 400);
+    }
+    
+    // Mettre à jour le stock source
+    await db
+      .update(inventory)
+      .set({
+        quantity_on_hand: sourceInventory.quantity_on_hand - body.quantity,
+        quantity_available: sourceInventory.quantity_available - body.quantity,
+        last_movement_date: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       })
+      .where(eq(inventory.id, body.fromInventoryId));
+    
+    // Vérifier/créer le stock destination
+    const destInventory = await db
+      .select()
+      .from(inventory)
+      .where(
+        and(
+          eq(inventory.product_id, sourceInventory.product_id),
+          eq(inventory.location_id, body.toLocationId)
+        )
+      )
+      .get();
+    
+    if (destInventory) {
+      await db
+        .update(inventory)
+        .set({
+          quantity_on_hand: destInventory.quantity_on_hand + body.quantity,
+          quantity_available: destInventory.quantity_available + body.quantity,
+          last_movement_date: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .where(eq(inventory.id, destInventory.id));
+    } else {
+      await db.insert(inventory).values({
+        organization_id: 1,
+        product_id: sourceInventory.product_id,
+        location_id: body.toLocationId,
+        quantity_on_hand: body.quantity,
+        quantity_available: body.quantity,
+        quantity_reserved: 0,
+        status: 'available',
+        lot_number: sourceInventory.lot_number,
+        last_movement_date: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
+    }
+    
+    // Enregistrer le mouvement
+    await db.insert(stockMovements).values({
+      organization_id: 1,
+      type: 'MOVE',
+      product_id: sourceInventory.product_id,
+      from_location_id: sourceInventory.location_id,
+      to_location_id: body.toLocationId,
+      quantity: body.quantity,
+      user_id: 1,
+      reason: body.reason || 'Transfert de stock',
+      created_at: new Date().toISOString()
+    });
+    
+    return c.json({ message: 'Stock moved successfully' });
+  } catch (error) {
+    console.error('Error moving stock:', error);
+    return c.json({ error: 'Failed to move stock' }, 500);
+  }
+});
+
+// POST /api/inventory/adjust - Ajustement de stock
+app.post('/adjust', async (c) => {
+  try {
+    const db = drizzle(c.env.DB);
+    const body = await c.req.json();
+    
+    const inv = await db
+      .select()
+      .from(inventory)
+      .where(eq(inventory.id, body.inventoryId))
+      .get();
+    
+    if (!inv) {
+      return c.json({ error: 'Inventory not found' }, 404);
+    }
+    
+    const difference = body.newQuantity - inv.quantity_on_hand;
+    
+    // Mettre à jour le stock
+    await db
+      .update(inventory)
+      .set({
+        quantity_on_hand: body.newQuantity,
+        quantity_available: body.newQuantity - inv.quantity_reserved,
+        last_count_date: new Date().toISOString(),
+        last_movement_date: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .where(eq(inventory.id, body.inventoryId));
+    
+    // Enregistrer le mouvement
+    await db.insert(stockMovements).values({
+      organization_id: 1,
+      type: 'ADJUST',
+      product_id: inv.product_id,
+      from_location_id: inv.location_id,
+      to_location_id: inv.location_id,
+      quantity: Math.abs(difference),
+      quantity_before: inv.quantity_on_hand,
+      quantity_after: body.newQuantity,
+      user_id: 1,
+      reason: body.reason || 'Ajustement inventaire',
+      notes: body.notes || null,
+      created_at: new Date().toISOString()
+    });
+    
+    return c.json({ 
+      message: 'Stock adjusted successfully',
+      difference: difference
+    });
+  } catch (error) {
+    console.error('Error adjusting stock:', error);
+    return c.json({ error: 'Failed to adjust stock' }, 500);
+  }
+});
+
+// GET /api/inventory/movements - Historique des mouvements
+app.get('/movements', async (c) => {
+  try {
+    const db = drizzle(c.env.DB);
+    
+    const movements = await db
+      .select()
       .from(stockMovements)
-      .innerJoin(products, eq(stockMovements.productId, products.id))
-      .leftJoin(locations, eq(stockMovements.locationId, locations.id))
-      .where(eq(stockMovements.organizationId, organizationId))
-      .orderBy(sql`${stockMovements.createdAt} DESC`)
+      .orderBy(sql`${stockMovements.created_at} DESC`)
       .limit(50)
       .all();
-
-    return c.json(result, 200);
+    
+    return c.json({ movements: movements || [] });
   } catch (error) {
-    console.error('Erreur GET /api/inventory/movements/list:', error);
-    return c.json({ error: 'Erreur serveur' }, 500);
+    console.error('Error fetching movements:', error);
+    return c.json({ error: 'Failed to fetch movements' }, 500);
   }
 });
 
-export default inventoryRouter;
+export default app;
