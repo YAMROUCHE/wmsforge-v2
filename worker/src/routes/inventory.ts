@@ -44,7 +44,7 @@ app.post('/receive', async (c) => {
     
     // Enregistrer le mouvement
     await c.env.DB.prepare(`
-      INSERT INTO stock_movements (organization_id, type, product_id, to_location_id, quantity, user_id, created_at)
+      INSERT INTO stock_movements (organization_id, type, product_id, location_id, quantity, user_id, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `).bind(1, 'RECEIVE', body.productId, body.locationId, body.quantity, 1, new Date().toISOString()).run();
     
