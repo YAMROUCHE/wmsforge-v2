@@ -85,7 +85,7 @@ export default function Inventory() {
   const fetchInventory = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:50214/api/inventory');
+      const response = await fetch('http://localhost:8787/api/inventory');
       if (response.ok) {
         const data = await response.json();
         setInventory(data.items || []);
@@ -99,7 +99,7 @@ export default function Inventory() {
 
   const fetchProducts = async () => {
     try {
-      const response = await fetch('http://localhost:50214/api/products');
+      const response = await fetch('http://localhost:8787/api/products');
       if (response.ok) {
         const data = await response.json();
         setProducts(data.items || []);
@@ -111,7 +111,7 @@ export default function Inventory() {
 
   const fetchMovements = async () => {
     try {
-      const response = await fetch('http://localhost:50214/api/inventory/movements');
+      const response = await fetch('http://localhost:8787/api/inventory/movements');
       if (response.ok) {
         const data = await response.json();
         setMovements(data.movements || []);
@@ -124,7 +124,7 @@ export default function Inventory() {
   const handleReceive = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await fetch('http://localhost:50214/api/inventory/receive', {
+      const response = await fetch('http://localhost:8787/api/inventory/receive', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -150,7 +150,7 @@ export default function Inventory() {
   const handleMove = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await fetch('http://localhost:50214/api/inventory/move', {
+      const response = await fetch('http://localhost:8787/api/inventory/move', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -175,7 +175,7 @@ export default function Inventory() {
   const handleAdjust = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await fetch('http://localhost:50214/api/inventory/adjust', {
+      const response = await fetch('http://localhost:8787/api/inventory/adjust', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
