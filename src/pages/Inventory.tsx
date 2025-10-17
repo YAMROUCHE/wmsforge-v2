@@ -215,9 +215,9 @@ export default function Inventory() {
     }
   };
 
-  const totalStock = inventory.reduce((sum, item) => sum + item.quantityOnHand, 0);
-  const totalAvailable = inventory.reduce((sum, item) => sum + item.quantityAvailable, 0);
-  const totalReserved = inventory.reduce((sum, item) => sum + item.quantityReserved, 0);
+  const totalStock = inventory.reduce((sum, item) => sum + (item.quantity || 0), 0);
+  const totalAvailable = inventory.reduce((sum, item) => sum + (item.quantity || 0), 0);
+  const totalReserved = inventory.reduce((sum, item) => sum + 0, 0);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -331,13 +331,13 @@ export default function Inventory() {
                         {item.locationCode}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {item.quantityOnHand}
+                        {(item.quantity || 0)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600">
-                        {item.quantityAvailable}
+                        {(item.quantity || 0)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-orange-600">
-                        {item.quantityReserved}
+                        {0}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {item.lotNumber || '-'}
@@ -520,7 +520,7 @@ export default function Inventory() {
                   <option value="">Sélectionner</option>
                   {inventory.filter(i => i.quantityAvailable > 0).map(item => (
                     <option key={item.id} value={item.id}>
-                      {item.productName} @ {item.locationCode} ({item.quantityAvailable} disponibles)
+                      {item.productName} @ {item.locationCode} ({(item.quantity || 0)} disponibles)
                     </option>
                   ))}
                 </select>
@@ -613,7 +613,7 @@ export default function Inventory() {
                   <option value="">Sélectionner</option>
                   {inventory.map(item => (
                     <option key={item.id} value={item.id}>
-                      {item.productName} @ {item.locationCode} (Actuel: {item.quantityOnHand})
+                      {item.productName} @ {item.locationCode} (Actuel: {(item.quantity || 0)})
                     </option>
                   ))}
                 </select>
