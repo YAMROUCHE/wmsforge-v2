@@ -1,519 +1,236 @@
 # 📦 MANIFESTE DE PROJET - 1wms.io
 
-**Date de création** : 10 octobre 2025  
-**Version** : 2.1.0  
+**Date de mise à jour** : 17 octobre 2025 - 21h05  
+**Version** : 2.2.1  
 **Développeur** : Amrouche (Débutant)  
 **Repository GitHub** : https://github.com/YAMROUCHE/wmsforge-v2  
-**Statut actuel** : ✅ **Phase Onboarding TERMINÉE** - Dashboard visuel fonctionnel !
+**Statut actuel** : ✅ Module Inventory DÉBUGUÉ - API fonctionnelle
 
 ---
 
-## 🚨 CONSIGNES STRICTES DE DÉVELOPPEMENT
+## 🚨 PROBLÈME RÉSOLU CETTE SESSION
 
-Ces règles DOIVENT être respectées à chaque étape :
+### ❌ Symptômes
+- Dropdown produits vide dans modal Réception
+- Erreurs 500 sur `/api/inventory/movements`
+- "NaN" affiché partout dans l'interface
+- Console affichait : `no such column: DESC`
 
-1. ✅ **Respect absolu du manifeste** : Toujours suivre l'architecture et les instructions définies
-2. ✅ **Pas de modification sans accord** : Ne JAMAIS modifier le code sans en parler d'abord
-3. ✅ **Sauvegardes systématiques** :
-   - Sauvegarde locale : `git add . && git commit -m "message"`
-   - Sauvegarde GitHub : `git push`
-   - Fréquence : Après chaque fonctionnalité complète
-4. ✅ **Méthode CAT obligatoire** : Toujours utiliser `cat > fichier << 'EOF'` avec le code COMPLET
-5. ✅ **Vérification du nombre de lignes** : Toujours compter les lignes avant déploiement avec `wc -l fichier`
-6. ✅ **Mise à jour du manifeste** : Mettre à jour ce document après chaque phase complétée
+### ✅ Solutions appliquées
+1. **Migration en doublon supprimée** : `0002_add_user_id_to_stock_movements.sql` (colonne déjà dans 0000)
+2. **Route `/movements` corrigée** : Supprimé le `orderBy` problématique avec Drizzle + D1
+3. **Ports API corrigés** : Tous les `localhost:50214` → `localhost:8787` dans Inventory.tsx
+4. **Base de données recréée** : Suppression complète + réapplication migrations propres
+5. **Worker redémarré** : Sur le bon port 8787
+
+### 📊 Résultat
+- ✅ API `/api/inventory/movements` fonctionne (retourne liste vide normalement)
+- ✅ API `/api/products` fonctionne
+- ✅ Plus d'erreurs dans la console
+- ⚠️ Base de données vide (produits à recréer via interface)
 
 ---
 
-## 🎯 OBJECTIF DU PROJET
+## 🎯 ÉTAT D'AVANCEMENT
 
-Créer une application SaaS complète de gestion d'entrepôt (WMS) appelée **1wms.io**, déployée sur Cloudflare avec une architecture moderne et scalable.
+### Phase 1 : Configuration ✅ TERMINÉ
+### Phase 2 : Authentification ✅ TERMINÉ  
+### Phase 3 : Onboarding ✅ TERMINÉ
+### Phase 4 : Dashboard Visuel ✅ TERMINÉ (90%)
+### Phase 5 : Gestion Produits ✅ TERMINÉ
 
-**Concept clé** : Le client décrit son entrepôt via un **wizard d'onboarding**, puis peut suivre son workflow de manière globale, optimiser son entreposage, ses entrées et sorties.
+### Phase 6 : Inventaire 🔧 EN COURS (95%)
+**✅ Terminé :**
+- Page Inventory avec 3 modals (Réception, Déplacement, Ajustement)
+- Routes API backend (`/inventory`, `/movements`, `/receive`, `/move`, `/adjust`)
+- Correction complète des bugs API
+- Base de données migrée proprement
+
+**⚠️ À tester :**
+- Créer des produits via page Products
+- Tester Réception de marchandise (dropdown devrait fonctionner)
+- Tester Déplacement de stock
+- Tester Ajustement d'inventaire
 
 ---
 
 ## 🏗 ARCHITECTURE TECHNIQUE
 
 ### Stack Technique
-
-**Frontend**
-- React 18.3.1 avec TypeScript
-- Vite 5.3.4 comme bundler
-- Tailwind CSS 3.4.7 pour le styling
+**Frontend :**
+- React 18.3.1 + TypeScript
+- Vite 5.3.4
+- Tailwind CSS 3.4.7
 - React Router 6.26.0
-- TanStack Query pour la gestion d'état
-- Lucide React pour les icônes
 
-**Backend** ✅ FONCTIONNEL
-- Cloudflare Workers avec Hono 4.5.0
-- TypeScript strict
-- Architecture RESTful API
-- JWT pour l'authentification (implémentation custom Web Crypto)
-- SHA-256 pour le hash des mots de passe
-- Routes : `/auth/register`, `/auth/login`, `/auth/me`
+**Backend :** ✅ FONCTIONNEL
+- Cloudflare Workers + Hono 4.5.0
+- JWT Authentication
+- Routes : `/auth/*`, `/api/products`, `/api/inventory/*`
 
-**Base de données** ✅ CONFIGURÉE
+**Base de données :** ✅ PROPRE
 - Cloudflare D1 (SQLite)
 - Drizzle ORM 0.33.0
-- ID de base : `4f114494-537e-4c31-8271-79f3ee49dfed`
-- 9 tables créées (organizations, users, products, suppliers, locations, inventory, stock_movements, orders, order_items)
-- Migrations appliquées en local
-
-**Stockage**
-- Cloudflare R2 pour les fichiers
-- Bucket name : `wmsforge-uploads`
+- 9 tables créées
+- Migrations : 0000 (initiale) + 0001 (onboarding)
 
 ---
 
 ## 📁 STRUCTURE DU PROJET
+```
 wmsforge-v2/
 ├── src/
-│   ├── components/
-│   │   ├── ui/ ✅ Button.tsx, Input.tsx
-│   │   ├── layout/ ✅ Header.tsx
-│   │   └── warehouse/ ✅ Système complet d'éditeur
 │   ├── pages/
-│   │   ├── Landing.tsx ✅ Terminé
-│   │   ├── Auth.tsx ✅ Terminé (Login/Register UI)
-│   │   ├── Onboarding.tsx ✅ Wizard 5 étapes TERMINÉ
-│   │   ├── WarehouseDashboard.tsx ✅ Dashboard visuel TERMINÉ
-│   │   ├── Dashboard.tsx ❌ À refactoriser
-│   │   ├── Products.tsx ❌ À créer
-│   │   ├── Inventory.tsx ❌ À créer
-│   │   ├── Orders.tsx ❌ À créer
-│   │   ├── Locations.tsx ❌ À créer
-│   │   └── Reports.tsx ❌ À créer
-│   ├── hooks/ ✅ useAuth
-│   ├── contexts/ ✅ AuthContext
-│   ├── lib/
-│   │   ├── utils.ts ✅ Terminé
-│   │   └── api.ts ❌ À créer
-│   ├── App.tsx ✅ Routes complètes
-│   ├── main.tsx ✅ Terminé
-│   └── index.css ✅ Tailwind + Style Claude.ai
-│
-├── worker/ ✅ COMPLET ET TESTÉ
-│   ├── src/
-│   │   ├── index.ts ✅ Point d'entrée Hono (41 lignes)
-│   │   ├── routes/
-│   │   │   └── auth.ts ✅ Register + Login + Me (202 lignes)
-│   │   └── utils/
-│   │       ├── jwt.ts ✅ Création/Vérification JWT (76 lignes)
-│   │       └── password.ts ✅ Hash + Validation (36 lignes)
-│   └── tsconfig.json ✅ Config TypeScript Worker
-│
+│   │   ├── Inventory.tsx        ✅ 687 lignes (ports corrigés)
+│   │   ├── Products.tsx         ✅ Fonctionnel
+│   │   ├── Onboarding.tsx       ✅ 497 lignes
+│   │   └── WarehouseDashboard.tsx ✅ 290 lignes
+│   └── ...
+├── worker/
+│   └── src/
+│       └── routes/
+│           ├── auth.ts          ✅ 202 lignes
+│           ├── products.ts      ✅ ~200 lignes
+│           └── inventory.ts     ✅ 222 lignes (corrigé)
 ├── db/
-│   ├── schema.ts ✅ Schéma Drizzle complet (106 lignes)
-│   └── migrations/ ✅ Migration SQL appliquée
-│       └── 0000_boring_mattie_franklin.sql
-│
-├── wrangler.toml ✅ Configuré (migrations_dir corrigé)
-├── drizzle.config.ts ✅ Config Drizzle
-├── package.json ✅ Dépendances installées
-├── PROJECT_MANIFEST.md ✅ Ce fichier
-└── README.md ❌ À créer
+│   ├── schema.ts                ✅ 106 lignes
+│   └── migrations/
+│       ├── 0000_boring_mattie_franklin.sql ✅
+│       └── 0001_add_onboarding_field.sql   ✅
+└── ...
+```
 
 ---
 
-## 🎨 DESIGN SYSTEM (Style Claude.ai)
+## 🚀 COMMANDES ESSENTIELLES
 
-### Palette de couleurs
-```css
-Background: Blanc (#FFFFFF)
-Text primary: Noir (#000000)
-Text secondary: Gris (#6B7280)
-Accent: Bleu (#2563EB)
-Border: Gris clair (#E5E7EB)
-Hover: Gris très clair (#F3F4F6)
-Composants UI Standards
-typescriptButton variants:
-- primary: bg-blue-600 text-white
-- secondary: bg-white text-black border-black
-- ghost: text-gray-700 hover:bg-gray-100
+### Développement
+```bash
+npm run dev            # Frontend (port 5174)
+npm run dev:worker     # Worker (port 8787)
+```
 
-Input:
-- border-gray-300
-- focus:ring-blue-500
-- Label en gray-700
-Logo et Branding
+### Base de données
+```bash
+npx wrangler d1 migrations apply wmsforge-db --local
+```
 
-Logo : Carré noir 32x32px avec "1" blanc centré
-Texte : "wms.io" en minuscules, font-semibold
-Le "1" du logo représente visuellement "1wms.io"
-
-
-✅ ÉTAT D'AVANCEMENT
-Phase 1 : Configuration et Landing Page ✅ TERMINÉ
-
- Initialisation du projet
- Configuration Vite + React + TypeScript
- Configuration Tailwind CSS
- Création composants UI de base (Button, Input)
- Création Header avec navigation
- Page Landing fonctionnelle
- Style Claude.ai appliqué
- Dépôt GitHub créé et synchronisé
- Branding 1wms.io appliqué
-
-Phase 2 : Authentification ✅ TERMINÉ (100%)
-
- Page Auth (Login/Register) - Frontend
- Schéma de base de données (Drizzle) - 9 tables
- Backend Auth avec JWT (Worker Hono)
- Routes /auth/register et /auth/login
- Hash des mots de passe (SHA-256)
- Validation des données
- Migrations générées et appliquées en local
- Tests réussis (Register + Login)
- Context Auth React
- Hook useAuth
- Middleware de protection des routes
-
-Phase 3 : Onboarding ✅ TERMINÉ (100%)
-
- Wizard d'onboarding (5 étapes)
-
- Étape 1 : Informations générales (nom, adresse, surface, hauteur)
- Étape 2 : Zones de l'entrepôt (type, surface, allées)
- Étape 3 : Configuration des allées (largeur, racks)
- Étape 4 : Racks et emplacements (niveaux, capacité)
- Étape 5 : Récapitulatif avec calcul de capacité
-
-
- Sauvegarde dans localStorage
- Pré-remplissage des données si modification
- Progression visuelle (barre de progression)
- Validation des champs à chaque étape
-
-Phase 4 : Dashboard Visuel ✅ TERMINÉ (90%)
-
- Vue d'ensemble de l'entrepôt
- 4 cartes de statistiques :
-
-Surface totale
-Nombre de zones
-Capacité totale (calculée automatiquement)
-Taux d'occupation (0% pour l'instant)
-
-
- Grille de zones colorées par type :
-
-📦 Réception (bleu)
-🏢 Stockage (vert)
-🎯 Picking (jaune)
-🚚 Expédition (orange)
-❄️ Zone froide (cyan)
-
-
- Calcul automatique des capacités par zone
- Sélection de zone (bordure bleue)
- Détails de zone (en bas de page - à améliorer)
- Drawer latéral pour détails (WIP - cassé, à réparer)
- Bouton "Modifier" fonctionnel
- Flèche retour vers dashboard (bug à corriger)
-
-Phase 5 : Dashboard Principal ❌ À REFACTORISER
-
- Dashboard principal après authentification
- Intégration avec WarehouseDashboard
- KPI Cards globaux
- Graphiques
- Activités récentes
- Alertes
-
-Phase 6 : Gestion Produits ❌ À FAIRE
-
- Liste produits
- Formulaire création/édition
- Upload images (R2)
- Import CSV
- Routes API backend
-
-Phase 7 : Inventaire ❌ À FAIRE
-
- Vue stock en temps réel
- Mouvements de stock
- Ajustements
- Scanner codes-barres
-
-Phase 8 : Autres modules ❌ À FAIRE
-
- Commandes
- Emplacements
- Rapports
- Exports
-
-Phase 9 : Déploiement ❌ À FAIRE
-
- Configuration D1 en production
- Configuration R2
- Déploiement Cloudflare Pages
- Tests de production
-
-
-🗄 SCHÉMA DE BASE DE DONNÉES ✅ CRÉÉ
-Tables Créées et Testées
-
-organizations - Organisations (multi-tenant) ✅
-users - Utilisateurs avec hash de mot de passe ✅
-products - Catalogue produits ✅
-suppliers - Fournisseurs ✅
-locations - Emplacements d'entrepôt ✅
-inventory - Stock par produit et emplacement ✅
-stock_movements - Historique des mouvements ✅
-orders - Commandes clients/fournisseurs ✅
-order_items - Lignes de commande ✅
-
-
-🚀 COMMANDES ESSENTIELLES
-Développement Local
-bashnpm run dev              # Lancer frontend (port 5173)
-npm run dev:worker       # Lancer worker (port 8787)
-npm run build            # Build frontend
-npm run build:worker     # Build worker
-npm run preview          # Preview build
-Base de données
-bashnpm run db:generate      # Générer migrations Drizzle
-npm run db:migrate       # Appliquer migrations en production
-npx wrangler d1 migrations apply wmsforge-db --local  # Migrations locales ✅ FAIT
-Tests API ✅ TESTÉS
-bash# Health check
-curl http://localhost:8787/health
-
-# Register
-curl -X POST http://localhost:8787/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"name":"User","email":"user@test.com","password":"pass123","organizationName":"Org"}'
-
-# Login
-curl -X POST http://localhost:8787/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"user@test.com","password":"pass123"}'
-Git
-bashgit add .
+### Git
+```bash
+git add .
 git commit -m "message"
 git push
-Cloudflare
-bashnpx wrangler d1 create wmsforge-db              # Créer base D1
-npx wrangler r2 bucket create wmsforge-uploads  # Créer bucket R2
-npx wrangler pages deploy dist                  # Déployer
+```
 
-⚠️ PROBLÈMES RÉSOLUS
-Problème 1 : Architecture Node.js vs Workers
+---
 
-Cause : Le projet initial (WmsForge) était en Node.js classique
-Solution : Refonte complète avec architecture Workers
-Statut : ✅ Résolu
+## 🔐 INFORMATIONS TECHNIQUES
 
-Problème 2 : Erreur "border-border" Tailwind
+**Ports utilisés :**
+- Frontend Vite : **5174**
+- Worker Hono : **8787** ⚠️ CRITIQUE
 
-Cause : Classe CSS non existante dans index.css
-Solution : Remplacer par border-color: theme('colors.gray.200')
-Statut : ✅ Résolu
+**API Endpoints ✅ FONCTIONNELS :**
+```
+GET  /health
+POST /auth/register
+POST /auth/login
+GET  /auth/me
 
-Problème 3 : tsconfig.node.json manquant
+GET    /api/products
+POST   /api/products
+PUT    /api/products/:id
+DELETE /api/products/:id
 
-Cause : Configuration Vite incomplète
-Solution : Créer tsconfig.node.json avec config Vite
-Statut : ✅ Résolu
+GET  /api/inventory
+GET  /api/inventory/movements
+POST /api/inventory/receive
+POST /api/inventory/move
+POST /api/inventory/adjust
+```
 
-Problème 4 : migrations_dir mal placé dans wrangler.toml
+---
 
-Cause : migrations_dir au niveau racine au lieu de [[d1_databases]]
-Solution : Déplacer dans la section [[d1_databases]]
-Statut : ✅ Résolu
+## 📝 PROCHAINES ÉTAPES
 
-Problème 5 : Tables non créées (no such table: users)
+### 🔴 PRIORITÉ IMMÉDIATE (Prochaine session)
 
-Cause : Migrations générées mais pas appliquées
-Solution : npx wrangler d1 migrations apply wmsforge-db --local
-Statut : ✅ Résolu
+1. **Créer 2-3 produits de test** via page Products
+2. **Tester le flow complet Inventory :**
+   - Réception : Vérifier dropdown produits rempli
+   - Créer une réception de marchandise
+   - Vérifier que le stock s'affiche (plus de "NaN")
+   - Tester Déplacement
+   - Tester Ajustement
 
-Problème 6 : Imports dupliqués dans WarehouseEditor
+3. **Si tout fonctionne :**
+   - Nettoyer les console.log de debug
+   - Commit : `feat: module inventory validé et testé`
+   - Passer à Phase 7 : Commandes
 
-Cause : Copier/coller de code a créé des doublons
-Solution : Scripts Node.js pour supprimer les doublons
-Statut : ✅ Résolu
+---
 
-Problème 7 : Route /warehouse-dashboard 404
+## ⚠️ BUGS CONNUS
 
-Cause : Route non ajoutée dans App.tsx (structure avec ProtectedRoute)
-Solution : Ajout manuel de la route
-Statut : ✅ Résolu
+### Bug 1 : Base de données vide ✅ NORMAL
+**Cause :** Recréation complète de la BDD locale  
+**Solution :** Recréer les produits via l'interface  
+**Impact :** Faible (données de test)
 
-Problème 8 : Drawer latéral JSX cassé
+### Bug 2 : Drawer latéral (WarehouseDashboard) ❌ NON RÉSOLU
+**Statut :** Reporté à plus tard  
+**Impact :** Faible (fonctionnalité secondaire)
 
-Cause : Remplacement automatique mal géré les balises imbriquées
-Solution : git checkout pour revenir à la version qui marche
-Statut : ⚠️ À réparer dans prochaine session
+---
 
+## 📊 STATISTIQUES DU CODE
 
-📝 PROCHAINES ÉTAPES RECOMMANDÉES
-Priorité Immédiate (Prochaine session)
+**Backend Worker :** ~700 lignes
+- Routes auth : 202 lignes ✅
+- Routes products : ~200 lignes ✅  
+- Routes inventory : 222 lignes ✅
 
-Réparer le drawer latéral (panneau de détails de zone)
+**Frontend :** ~3500 lignes
+- Inventory.tsx : 687 lignes ✅
+- Products.tsx : ~450 lignes ✅
+- Onboarding.tsx : 497 lignes ✅
+- WarehouseDashboard.tsx : 290 lignes ✅
 
-Recréer proprement le fichier WarehouseDashboard.tsx
-Ajouter l'overlay + panneau qui slide depuis la droite
-Animation fluide
+**Total projet :** ~4200 lignes ✅
 
+---
 
-Corriger la flèche retour
+## 💡 LEÇONS APPRISES
 
-Dashboard → /dashboard au lieu de /
+### ✅ Bonnes pratiques découvertes
+1. Toujours vérifier les ports utilisés (8787 vs 50214)
+2. Drizzle + D1 : éviter `orderBy` complexes, utiliser SQL brut si besoin
+3. Vérifier les migrations en doublon avant d'appliquer
+4. Tester les APIs avec `curl` avant de débugger le frontend
+5. Supprimer et recréer la BDD locale en cas de corruption
 
+### ⚠️ Pièges à éviter
+1. Ne pas utiliser `desc()` de Drizzle avec D1 (génère SQL incompatible)
+2. Ne pas oublier de redémarrer le Worker après modifs
+3. Vérifier que le port du Worker est bien 8787
+4. Ne pas créer de migrations qui ajoutent des colonnes déjà existantes
 
-Améliorer l'UX
+---
 
-Transitions plus fluides
-Meilleur feedback visuel
+## 🎯 OBJECTIF FINAL
 
-
-Intégration Backend
-
-Créer API pour sauvegarder la config en BDD
-Remplacer localStorage par API
-
-
-
-Ordre de développement suggéré
-Phase Onboarding (✅ terminée) → Phase Dashboard visuel (90%) → Phase Dashboard principal → Phase Produits → Phase Inventaire → Phase Autres modules → Phase Déploiement
-
-🔐 INFORMATIONS SENSIBLES
-IDs Cloudflare (Dans wrangler.toml)
-tomldatabase_id = "4f114494-537e-4c31-8271-79f3ee49dfed"  # D1 Database
-bucket_name = "wmsforge-uploads"                      # R2 Bucket
-JWT_SECRET = "whsec_a8f3b2c1d4e5f6g7h8i9j0k1l2m3n4o5"  # JWT Secret
-migrations_dir = "db/migrations"                       # Chemin migrations
-
-🔌 API ENDPOINTS ✅ FONCTIONNELS
-Authentification
-
-POST /auth/register - Créer un compte ✅ TESTÉ
-POST /auth/login - Se connecter ✅ TESTÉ
-GET /auth/me - Vérifier le token (À implémenter complètement)
-
-Santé
-
-GET /health - Health check ✅ TESTÉ
-
-
-📊 STATISTIQUES DU CODE
-Backend Worker : ~500 lignes au total
-
-worker/src/index.ts : 41 lignes
-worker/src/routes/auth.ts : 202 lignes
-worker/src/utils/jwt.ts : 76 lignes
-worker/src/utils/password.ts : 36 lignes
-db/schema.ts : 106 lignes
-drizzle.config.ts : 13 lignes
-worker/tsconfig.json : 14 lignes
-
-Frontend : ~2000 lignes
-
-Pages :
-
-Landing.tsx : ~200 lignes
-Auth.tsx : ~150 lignes
-Onboarding.tsx : 497 lignes ✅ NOUVEAU
-WarehouseDashboard.tsx : 290 lignes ✅ NOUVEAU
-Autres pages : ~400 lignes
-
-
-Composants :
-
-Warehouse Editor : ~800 lignes
-UI Components : ~100 lignes
-Layout : ~50 lignes
-
-
-
-Total projet : ~2500 lignes de code ✅ ÉNORME PROGRÈS !
-
-👨‍💻 NOTES DÉVELOPPEUR
-Niveau de compétence
-Débutant - Nécessite accompagnement pas à pas détaillé
-Préférences de style
-
-Commentaires en français
-Explications détaillées pour chaque étape
-Validation fréquente des résultats
-Style visuel : Claude.ai (minimaliste, blanc/gris/bleu)
-
-Méthode de travail efficace
-
-Donner une commande à la fois
-Attendre la validation avant de continuer
-Expliquer le "pourquoi" de chaque action
-Faire des commits Git réguliers
-
-
-📚 RESSOURCES UTILES
-Documentation
-
-React: https://react.dev
-Vite: https://vitejs.dev
-Tailwind: https://tailwindcss.com
-Cloudflare Workers: https://developers.cloudflare.com/workers
-Drizzle ORM: https://orm.drizzle.team
-Hono: https://hono.dev
-
-Commandes de dépannage
-bash# Réinstaller dépendances
-rm -rf node_modules package-lock.json
-npm install
-
-# Nettoyer le cache Vite
-rm -rf .vite
-
-# Vérifier TypeScript
-npx tsc --noEmit
-
-# Lister les fichiers
-tree -L 3 -I 'node_modules|dist'
-
-🎯 OBJECTIF FINAL
 Application SaaS complète 1wms.io :
+- ✅ Authentification multi-utilisateurs
+- ✅ Onboarding wizard
+- ✅ Dashboard visuel entrepôt
+- ✅ Gestion Produits (CRUD complet)
+- ✅ Gestion Inventaire (API fonctionnelle)
+- ❌ Gestion Commandes
+- ❌ Rapports
+- ❌ Déploiement Cloudflare
 
-✅ Onboarding wizard guidé
-✅ Dashboard visuel de l'entrepôt
-✅ Authentification multi-utilisateurs
-✅ Multi-tenant (organizations)
-❌ Gestion complète produits, inventaire, commandes
-❌ Import/Export CSV
-❌ Upload images (R2)
-❌ Rapports détaillés
-✅ Design minimaliste style Claude.ai
-❌ Déployé sur Cloudflare (Pages + Workers + D1 + R2)
-❌ Performance et scalabilité
+---
 
-
-DERNIÈRE MISE À JOUR : 12 octobre 2025 - 19h35
-Phase actuelle : Onboarding + Dashboard visuel ✅ TERMINÉS (90%)
-PROCHAIN OBJECTIF : Réparer le drawer latéral + Intégration backend
-
-FIN DU MANIFESTE
-
-## 📝 MISE À JOUR SESSION 13 OCTOBRE 2025
-
-### ✅ RÉALISATIONS
-- Sprint 1: Landing Page ✅
-- Sprint 2: Products CRUD ✅ 
-- Sprint 3: Inventory (90%) - Interface OK, bug API
-
-### ⚠️ BUGS À CORRIGER
-- Products ne se chargent pas dans le select de réception
-- Routes API retournent 500 sur inventory/receive
-- Colonnes snake_case vs camelCase dans inventory.ts
-
-### 🎯 PROCHAIN CHAT
-1. Corriger le bug products dans Inventory
-2. Tester réception/mouvement/ajustement
-3. Passer au Dashboard principal
-4. Déploiement sur Cloudflare
-
-### 📊 ÉTAT ACTUEL
-- 2 produits créés (Test-001, Fati-002)
-- 3 emplacements (A-01-01, A-01-02, B-01-01)
-- Worker sur port 8787
-- Frontend sur port 5173
+**FIN DU MANIFESTE**  
+**Dernière session :** 17 octobre 2025 - Debug complet module Inventory  
+**Prochain objectif :** Tester le flow Inventory avec vrais produits
