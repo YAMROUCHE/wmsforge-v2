@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown, Package, ShoppingCart, Activity, AlertTriangle, MapPin, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import AppLayout from '../components/layout/AppLayout';
+import SuggestionsPanel from '../components/SuggestionsPanel';
+import { suggestionsEngine, Suggestion } from '../utils/suggestionsEngine';
 
 interface DashboardStats {
   totalProducts: number;
@@ -36,6 +38,7 @@ export default function Dashboard() {
     totalRevenue: 0
   });
   const [recentMovements, setRecentMovements] = useState<Movement[]>([]);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
 
   useEffect(() => {
     fetchDashboardData();
@@ -92,6 +95,15 @@ export default function Dashboard() {
 
       // Récupérer le nom de l'utilisateur
       setUserName(settings.profile?.name || 'Utilisateur');
+
+      // 🤖 Générer les suggestions IA
+      const aiSuggestions = suggestionsEngine.analyze({
+        inventory: inventory.items || [],
+        orders: orders.orders || [],
+        locations: locations.locations || [],
+        totalProducts: products.pagination?.total || 0
+      });
+      setSuggestions(aiSuggestions);
     } catch (error) {
       console.error('Erreur chargement dashboard:', error);
     } finally {
@@ -158,6 +170,11 @@ export default function Dashboard() {
           <p className="mt-2 text-gray-600">
             Voici un aperçu de votre activité et de vos indicateurs clés.
           </p>
+        </div>
+
+        {/* 🤖 AI Suggestions Panel */}
+        <div className="mb-8">
+          <SuggestionsPanel suggestions={suggestions} loading={loading} />
         </div>
 
         {/* Stats Grid */}
