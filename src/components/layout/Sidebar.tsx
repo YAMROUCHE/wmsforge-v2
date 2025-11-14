@@ -12,7 +12,8 @@ import {
   ChevronRight,
   Sun,
   Moon,
-  Bell
+  Bell,
+  FlaskConical
 } from 'lucide-react';
 import { useSidebar } from '../../contexts/SidebarContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -32,6 +33,7 @@ export default function Sidebar() {
     { path: '/orders', icon: ShoppingCart, label: 'Commandes' },
     { path: '/locations', icon: MapPin, label: 'Emplacements' },
     { path: '/reports', icon: BarChart3, label: 'Rapports' },
+    { path: '/enterprise-test', icon: FlaskConical, label: 'Tests Enterprise' },
     { path: '/settings', icon: Settings, label: 'Paramètres' }
   ];
 

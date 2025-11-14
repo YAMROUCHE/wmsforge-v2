@@ -11,6 +11,7 @@ import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import Onboarding from './pages/Onboarding';
 import WarehouseDashboard from './pages/WarehouseDashboard';
+import EnterpriseTest from './pages/EnterpriseTest';
 import { AuthProvider } from './contexts/AuthContext';
 import { SidebarProvider, useSidebar } from './contexts/SidebarContext';
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -35,6 +36,7 @@ function MainContent() {
         <Route path="/settings" element={<Settings />} />
         <Route path="/onboarding" element={<Onboarding />} />
         <Route path="/warehouse-dashboard" element={<WarehouseDashboard />} />
+        <Route path="/enterprise-test" element={<EnterpriseTest />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </main>
