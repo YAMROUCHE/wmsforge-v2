@@ -13,13 +13,14 @@ import Onboarding from './pages/Onboarding';
 import WarehouseDashboard from './pages/WarehouseDashboard';
 import { AuthProvider } from './contexts/AuthContext';
 import { SidebarProvider, useSidebar } from './contexts/SidebarContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 import Sidebar from './components/layout/Sidebar';
 
 function MainContent() {
   const { isCollapsed } = useSidebar();
 
   return (
-    <main className={`flex-1 transition-all duration-300 ${isCollapsed ? 'ml-16' : 'ml-60'}`}>
+    <main className={`flex-1 transition-all duration-300 bg-gray-50 dark:bg-gray-950 min-h-screen ${isCollapsed ? 'ml-16' : 'ml-60'}`}>
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/auth" element={<Auth />} />
@@ -40,16 +41,18 @@ function MainContent() {
 
 function App() {
   return (
-    <AuthProvider>
-      <SidebarProvider>
-        <Router>
-          <div className="flex">
-            <Sidebar />
-            <MainContent />
-          </div>
-        </Router>
-      </SidebarProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <SidebarProvider>
+          <Router>
+            <div className="flex">
+              <Sidebar />
+              <MainContent />
+            </div>
+          </Router>
+        </SidebarProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 

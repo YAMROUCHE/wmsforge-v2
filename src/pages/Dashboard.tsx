@@ -155,7 +155,7 @@ export default function Dashboard() {
     return (
       <AppLayout>
         <div className="flex items-center justify-center min-h-screen">
-          <div className="text-gray-600">Chargement du dashboard...</div>
+          <div className="text-gray-600 dark:text-gray-300">Chargement du dashboard...</div>
         </div>
       </AppLayout>
     );
@@ -166,8 +166,8 @@ export default function Dashboard() {
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         {/* Welcome Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Bienvenue, {userName} ! 👋</h1>
-          <p className="mt-2 text-gray-600">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Bienvenue, {userName} ! 👋</h1>
+          <p className="mt-2 text-gray-600 dark:text-gray-300">
             Voici un aperçu de votre activité et de vos indicateurs clés.
           </p>
         </div>
@@ -182,84 +182,84 @@ export default function Dashboard() {
           {/* Produits en stock */}
           <div
             onClick={() => navigate('/products')}
-            className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-all cursor-pointer"
+            className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md dark:hover:shadow-gray-700/50 transition-all cursor-pointer"
           >
             <div className="flex items-center justify-between mb-4">
               <div className="bg-blue-500 p-3 rounded-lg">
                 <Package className="w-6 h-6 text-white" />
               </div>
             </div>
-            <h3 className="text-sm font-medium text-gray-600 mb-1">Produits en stock</h3>
+            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">Produits en stock</h3>
             <div className="flex items-baseline justify-between">
-              <p className="text-3xl font-bold text-gray-900">{stats.totalInventory}</p>
-              <ArrowRight className="w-5 h-5 text-gray-400" />
+              <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{stats.totalInventory}</p>
+              <ArrowRight className="w-5 h-5 text-gray-400 dark:text-gray-500" />
             </div>
-            <p className="text-xs text-gray-500 mt-2">{stats.totalProducts} produits distincts</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">{stats.totalProducts} produits distincts</p>
           </div>
 
           {/* Commandes en attente */}
           <div
             onClick={() => navigate('/orders')}
-            className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-all cursor-pointer"
+            className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md dark:hover:shadow-gray-700/50 transition-all cursor-pointer"
           >
             <div className="flex items-center justify-between mb-4">
               <div className="bg-purple-500 p-3 rounded-lg">
                 <ShoppingCart className="w-6 h-6 text-white" />
               </div>
               {stats.pendingOrders > 0 && (
-                <span className="text-sm font-medium text-orange-600 bg-orange-50 px-2 py-1 rounded">
+                <span className="text-sm font-medium text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30 px-2 py-1 rounded">
                   {stats.pendingOrders} en attente
                 </span>
               )}
             </div>
-            <h3 className="text-sm font-medium text-gray-600 mb-1">Commandes</h3>
+            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">Commandes</h3>
             <div className="flex items-baseline justify-between">
-              <p className="text-3xl font-bold text-gray-900">{stats.pendingOrders}</p>
-              <ArrowRight className="w-5 h-5 text-gray-400" />
+              <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{stats.pendingOrders}</p>
+              <ArrowRight className="w-5 h-5 text-gray-400 dark:text-gray-500" />
             </div>
-            <p className="text-xs text-gray-500 mt-2">Revenu total: {stats.totalRevenue}€</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Revenu total: {stats.totalRevenue}€</p>
           </div>
 
           {/* Mouvements de stock */}
           <div
             onClick={() => navigate('/inventory')}
-            className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-all cursor-pointer"
+            className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md dark:hover:shadow-gray-700/50 transition-all cursor-pointer"
           >
             <div className="flex items-center justify-between mb-4">
               <div className="bg-green-500 p-3 rounded-lg">
                 <Activity className="w-6 h-6 text-white" />
               </div>
             </div>
-            <h3 className="text-sm font-medium text-gray-600 mb-1">Mouvements</h3>
+            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">Mouvements</h3>
             <div className="flex items-baseline justify-between">
-              <p className="text-3xl font-bold text-gray-900">{stats.totalMovements}</p>
-              <ArrowRight className="w-5 h-5 text-gray-400" />
+              <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{stats.totalMovements}</p>
+              <ArrowRight className="w-5 h-5 text-gray-400 dark:text-gray-500" />
             </div>
-            <p className="text-xs text-gray-500 mt-2">{stats.totalLocations} emplacements actifs</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">{stats.totalLocations} emplacements actifs</p>
           </div>
 
           {/* Alertes stock faible */}
           <div
             onClick={() => navigate('/inventory')}
-            className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-all cursor-pointer"
+            className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md dark:hover:shadow-gray-700/50 transition-all cursor-pointer"
           >
             <div className="flex items-center justify-between mb-4">
               <div className="bg-red-500 p-3 rounded-lg">
                 <AlertTriangle className="w-6 h-6 text-white" />
               </div>
               {stats.lowStockAlerts > 0 && (
-                <span className="text-sm font-medium text-red-600 bg-red-50 px-2 py-1 rounded">
+                <span className="text-sm font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30 px-2 py-1 rounded">
                   Urgent
                 </span>
               )}
             </div>
-            <h3 className="text-sm font-medium text-gray-600 mb-1">Alertes stock faible</h3>
+            <h3 className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-1">Alertes stock faible</h3>
             <div className="flex items-baseline justify-between">
-              <p className="text-3xl font-bold text-gray-900">{stats.lowStockAlerts}</p>
-              <ArrowRight className="w-5 h-5 text-gray-400" />
+              <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{stats.lowStockAlerts}</p>
+              <ArrowRight className="w-5 h-5 text-gray-400 dark:text-gray-500" />
             </div>
             {stats.lowStockAlerts > 0 && (
-              <p className="text-sm text-red-600 mt-2 font-medium">Action requise</p>
+              <p className="text-sm text-red-600 dark:text-red-400 mt-2 font-medium">Action requise</p>
             )}
           </div>
         </div>
@@ -267,15 +267,15 @@ export default function Dashboard() {
         {/* Charts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* Stock Distribution */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Distribution du stock</h3>
+          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Distribution du stock</h3>
             <div className="space-y-4">
               <div>
                 <div className="flex justify-between text-sm mb-2">
-                  <span className="text-gray-600">Stock total</span>
-                  <span className="font-medium text-gray-900">{stats.totalInventory} unités</span>
+                  <span className="text-gray-600 dark:text-gray-300">Stock total</span>
+                  <span className="font-medium text-gray-900 dark:text-gray-100">{stats.totalInventory} unités</span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-3">
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
                   <div
                     className="bg-blue-600 h-3 rounded-full transition-all duration-500"
                     style={{ width: '100%' }}
@@ -285,10 +285,10 @@ export default function Dashboard() {
 
               <div>
                 <div className="flex justify-between text-sm mb-2">
-                  <span className="text-gray-600">Produits distincts</span>
-                  <span className="font-medium text-gray-900">{stats.totalProducts} types</span>
+                  <span className="text-gray-600 dark:text-gray-300">Produits distincts</span>
+                  <span className="font-medium text-gray-900 dark:text-gray-100">{stats.totalProducts} types</span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-3">
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
                   <div
                     className="bg-green-600 h-3 rounded-full transition-all duration-500"
                     style={{
@@ -300,12 +300,12 @@ export default function Dashboard() {
 
               <div>
                 <div className="flex justify-between text-sm mb-2">
-                  <span className="text-gray-600">Alertes stock faible</span>
-                  <span className={`font-medium ${stats.lowStockAlerts > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                  <span className="text-gray-600 dark:text-gray-300">Alertes stock faible</span>
+                  <span className={`font-medium ${stats.lowStockAlerts > 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
                     {stats.lowStockAlerts} produits
                   </span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-3">
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
                   <div
                     className={`h-3 rounded-full transition-all duration-500 ${stats.lowStockAlerts > 0 ? 'bg-red-600' : 'bg-green-600'}`}
                     style={{
@@ -318,58 +318,58 @@ export default function Dashboard() {
           </div>
 
           {/* Activity Overview */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Vue d'ensemble</h3>
+          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Vue d'ensemble</h3>
             <div className="space-y-4">
-              <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+              <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-blue-500 rounded-lg">
                     <Package className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-900">Mouvements totaux</p>
-                    <p className="text-xs text-gray-600">Historique complet</p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Mouvements totaux</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-300">Historique complet</p>
                   </div>
                 </div>
-                <p className="text-2xl font-bold text-blue-600">{stats.totalMovements}</p>
+                <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats.totalMovements}</p>
               </div>
 
-              <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
+              <div className="flex items-center justify-between p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-purple-500 rounded-lg">
                     <MapPin className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-900">Emplacements actifs</p>
-                    <p className="text-xs text-gray-600">Zones de stockage</p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Emplacements actifs</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-300">Zones de stockage</p>
                   </div>
                 </div>
-                <p className="text-2xl font-bold text-purple-600">{stats.totalLocations}</p>
+                <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{stats.totalLocations}</p>
               </div>
 
-              <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+              <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-green-500 rounded-lg">
                     <TrendingUp className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-900">Revenu total</p>
-                    <p className="text-xs text-gray-600">Toutes commandes</p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Revenu total</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-300">Toutes commandes</p>
                   </div>
                 </div>
-                <p className="text-2xl font-bold text-green-600">{stats.totalRevenue}€</p>
+                <p className="text-2xl font-bold text-green-600 dark:text-green-400">{stats.totalRevenue}€</p>
               </div>
             </div>
           </div>
         </div>
 
         {/* Activity Feed */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Mouvements récents</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Mouvements récents</h2>
             <button
               onClick={() => navigate('/inventory')}
-              className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+              className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium flex items-center gap-1"
             >
               Voir tout
               <ArrowRight className="w-4 h-4" />
@@ -379,31 +379,31 @@ export default function Dashboard() {
           {recentMovements.length > 0 ? (
             <div className="space-y-4">
               {recentMovements.map((movement) => (
-                <div key={movement.id} className="flex items-start space-x-3 p-3 hover:bg-gray-50 rounded-lg transition-colors">
+                <div key={movement.id} className="flex items-start space-x-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors">
                   <div className={`w-2 h-2 mt-2 rounded-full ${getMovementTypeColor(movement.type)}`} />
                   <div className="flex-1">
                     <div className="flex items-start justify-between">
                       <div>
-                        <p className="text-sm text-gray-900 font-medium">
+                        <p className="text-sm text-gray-900 dark:text-gray-100 font-medium">
                           {getMovementTypeLabel(movement.type)} - {movement.product_name}
                         </p>
-                        <p className="text-xs text-gray-600 mt-1">
+                        <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">
                           Quantité: {movement.quantity} {movement.location_name && `• ${movement.location_name}`}
                         </p>
                       </div>
-                      <span className="text-xs text-gray-500">{formatTimeAgo(movement.created_at)}</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">{formatTimeAgo(movement.created_at)}</span>
                     </div>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="text-center py-8 text-gray-500">
-              <Activity className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+              <Activity className="w-12 h-12 mx-auto mb-3 text-gray-300 dark:text-gray-600" />
               <p>Aucun mouvement récent</p>
               <button
                 onClick={() => navigate('/inventory')}
-                className="mt-3 text-sm text-blue-600 hover:text-blue-700 font-medium"
+                className="mt-3 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
               >
                 Créer un mouvement
               </button>
