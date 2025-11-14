@@ -90,7 +90,48 @@ export default function Reports() {
   };
 
   const handleExport = (format: 'csv' | 'pdf') => {
-    alert(`Export ${format.toUpperCase()} en cours... (Fonctionnalité à implémenter)`);
+    if (format === 'csv') {
+      exportToCSV();
+    } else {
+      alert('Export PDF en cours de développement...');
+    }
+  };
+
+  const exportToCSV = () => {
+    const csvContent = [
+      // Header
+      ['Métrique', 'Valeur', 'Détails'].join(','),
+
+      // KPIs principaux
+      ['Commandes totales', stats.totalOrders, `${stats.ordersThisMonth} ce mois`].join(','),
+      ['Revenu total', `${stats.totalRevenue}€`, `~${stats.averageOrderValue}€ par commande`].join(','),
+      ['Produits', stats.totalProducts, `${stats.stockValue} unités en stock`].join(','),
+      ['Emplacements', stats.totalLocations, 'Zones actives'].join(','),
+      '',
+
+      // Performance des ventes
+      ['Performance des ventes', '', ''].join(','),
+      ['Commandes confirmées', '75%', ''].join(','),
+      ['Commandes expédiées', '60%', ''].join(','),
+      ['Commandes livrées', '50%', ''].join(','),
+      '',
+
+      // Top produits
+      ['Top Produits', '', ''].join(','),
+      ['1', stats.topProduct, `${stats.stockValue} unités`].join(','),
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+
+    link.setAttribute('href', url);
+    link.setAttribute('download', `rapport-wms-${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   if (loading) {

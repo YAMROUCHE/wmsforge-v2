@@ -6,19 +6,21 @@ type Tab = 'profile' | 'organization' | 'notifications' | 'appearance';
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState<Tab>('profile');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   // États pour les formulaires
   const [profileForm, setProfileForm] = useState({
-    name: 'Amrouche',
-    email: 'amrouche@test.com',
-    role: 'Admin'
+    name: '',
+    email: '',
+    role: 'user'
   });
 
   const [orgForm, setOrgForm] = useState({
-    name: 'Mon Entrepôt',
-    address: '123 Rue de la Logistique',
-    phone: '+33 1 23 45 67 89',
-    email: 'contact@monentrepot.fr'
+    name: '',
+    address: '',
+    phone: '',
+    email: ''
   });
 
   const [notifForm, setNotifForm] = useState({
@@ -34,20 +36,114 @@ export default function Settings() {
     dateFormat: 'dd/mm/yyyy'
   });
 
-  const handleSaveProfile = () => {
-    alert('Profil sauvegardé ! (Fonctionnalité à implémenter)');
+  // Charger les settings au montage
+  React.useEffect(() => {
+    fetchSettings();
+  }, []);
+
+  const fetchSettings = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('http://localhost:8787/api/settings');
+      const data = await response.json();
+
+      setProfileForm(data.profile);
+      setOrgForm(data.organization);
+      setNotifForm(data.notifications);
+      setAppearanceForm(data.appearance);
+    } catch (error) {
+      console.error('Erreur chargement settings:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleSaveOrganization = () => {
-    alert('Organisation sauvegardée ! (Fonctionnalité à implémenter)');
+  const handleSaveProfile = async () => {
+    try {
+      setSaving(true);
+      const response = await fetch('http://localhost:8787/api/settings/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(profileForm)
+      });
+
+      if (response.ok) {
+        alert('Profil sauvegardé avec succès !');
+      } else {
+        alert('Erreur lors de la sauvegarde du profil');
+      }
+    } catch (error) {
+      console.error('Erreur:', error);
+      alert('Erreur lors de la sauvegarde du profil');
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleSaveNotifications = () => {
-    alert('Préférences de notifications sauvegardées !');
+  const handleSaveOrganization = async () => {
+    try {
+      setSaving(true);
+      const response = await fetch('http://localhost:8787/api/settings/organization', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(orgForm)
+      });
+
+      if (response.ok) {
+        alert('Organisation sauvegardée avec succès !');
+      } else {
+        alert('Erreur lors de la sauvegarde de l\'organisation');
+      }
+    } catch (error) {
+      console.error('Erreur:', error);
+      alert('Erreur lors de la sauvegarde de l\'organisation');
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleSaveAppearance = () => {
-    alert('Préférences d\'apparence sauvegardées !');
+  const handleSaveNotifications = async () => {
+    try {
+      setSaving(true);
+      const response = await fetch('http://localhost:8787/api/settings/notifications', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(notifForm)
+      });
+
+      if (response.ok) {
+        alert('Préférences de notifications sauvegardées avec succès !');
+      } else {
+        alert('Erreur lors de la sauvegarde des notifications');
+      }
+    } catch (error) {
+      console.error('Erreur:', error);
+      alert('Erreur lors de la sauvegarde des notifications');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSaveAppearance = async () => {
+    try {
+      setSaving(true);
+      const response = await fetch('http://localhost:8787/api/settings/appearance', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(appearanceForm)
+      });
+
+      if (response.ok) {
+        alert('Préférences d\'apparence sauvegardées avec succès !');
+      } else {
+        alert('Erreur lors de la sauvegarde des préférences d\'apparence');
+      }
+    } catch (error) {
+      console.error('Erreur:', error);
+      alert('Erreur lors de la sauvegarde des préférences d\'apparence');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const tabs = [
@@ -56,6 +152,14 @@ export default function Settings() {
     { id: 'notifications' as Tab, label: 'Notifications', icon: Bell },
     { id: 'appearance' as Tab, label: 'Apparence', icon: Palette }
   ];
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-gray-600">Chargement des paramètres...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
@@ -134,9 +238,9 @@ export default function Settings() {
                 </div>
 
                 <div className="pt-4">
-                  <Button onClick={handleSaveProfile}>
+                  <Button onClick={handleSaveProfile} disabled={saving}>
                     <Save className="w-4 h-4 mr-2" />
-                    Sauvegarder
+                    {saving ? 'Sauvegarde...' : 'Sauvegarder'}
                   </Button>
                 </div>
               </div>
@@ -189,9 +293,9 @@ export default function Settings() {
                 </div>
 
                 <div className="pt-4">
-                  <Button onClick={handleSaveOrganization}>
+                  <Button onClick={handleSaveOrganization} disabled={saving}>
                     <Save className="w-4 h-4 mr-2" />
-                    Sauvegarder
+                    {saving ? 'Sauvegarde...' : 'Sauvegarder'}
                   </Button>
                 </div>
               </div>
@@ -268,9 +372,9 @@ export default function Settings() {
                 </div>
 
                 <div className="pt-4">
-                  <Button onClick={handleSaveNotifications}>
+                  <Button onClick={handleSaveNotifications} disabled={saving}>
                     <Save className="w-4 h-4 mr-2" />
-                    Sauvegarder
+                    {saving ? 'Sauvegarde...' : 'Sauvegarder'}
                   </Button>
                 </div>
               </div>
@@ -323,9 +427,9 @@ export default function Settings() {
                 </div>
 
                 <div className="pt-4">
-                  <Button onClick={handleSaveAppearance}>
+                  <Button onClick={handleSaveAppearance} disabled={saving}>
                     <Save className="w-4 h-4 mr-2" />
-                    Sauvegarder
+                    {saving ? 'Sauvegarde...' : 'Sauvegarder'}
                   </Button>
                 </div>
               </div>
