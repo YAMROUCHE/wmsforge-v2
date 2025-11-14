@@ -14,7 +14,9 @@ import WarehouseDashboard from './pages/WarehouseDashboard';
 import { AuthProvider } from './contexts/AuthContext';
 import { SidebarProvider, useSidebar } from './contexts/SidebarContext';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { NotificationProvider } from './contexts/NotificationContext';
 import Sidebar from './components/layout/Sidebar';
+import ToastNotifications from './components/ToastNotifications';
 
 function MainContent() {
   const { isCollapsed } = useSidebar();
@@ -42,16 +44,19 @@ function MainContent() {
 function App() {
   return (
     <ThemeProvider>
-      <AuthProvider>
-        <SidebarProvider>
-          <Router>
-            <div className="flex">
-              <Sidebar />
-              <MainContent />
-            </div>
-          </Router>
-        </SidebarProvider>
-      </AuthProvider>
+      <NotificationProvider>
+        <AuthProvider>
+          <SidebarProvider>
+            <Router>
+              <div className="flex">
+                <Sidebar />
+                <MainContent />
+                <ToastNotifications />
+              </div>
+            </Router>
+          </SidebarProvider>
+        </AuthProvider>
+      </NotificationProvider>
     </ThemeProvider>
   );
 }

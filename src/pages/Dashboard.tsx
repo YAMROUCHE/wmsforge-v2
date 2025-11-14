@@ -8,6 +8,7 @@ import OrderPatternsPanel from '../components/OrderPatternsPanel';
 import { suggestionsEngine, Suggestion } from '../utils/suggestionsEngine';
 import { locationOptimizer, LocationOptimization } from '../utils/locationOptimizer';
 import { orderPatternsAnalyzer, OrderPattern, ProductAssociation } from '../utils/orderPatternsAnalyzer';
+import { useNotifications } from '../contexts/NotificationContext';
 
 interface DashboardStats {
   totalProducts: number;
@@ -30,6 +31,7 @@ interface Movement {
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const { addNotification } = useNotifications();
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState('');
   const [stats, setStats] = useState<DashboardStats>({
@@ -111,6 +113,24 @@ export default function Dashboard() {
         totalProducts: products.pagination?.total || 0
       });
       setSuggestions(aiSuggestions);
+
+      // 🔔 Générer notifications automatiques pour les suggestions critiques
+      aiSuggestions
+        .filter(s => s.priority === 'high')
+        .slice(0, 3) // Limiter à 3 notifications pour ne pas surcharger
+        .forEach(s => {
+          const notificationType = s.type === 'urgent' ? 'error' : s.type === 'warning' ? 'warning' : 'info';
+
+          addNotification({
+            type: notificationType,
+            title: s.title,
+            message: s.description,
+            action: s.action ? {
+              label: s.action.label,
+              onClick: () => navigate(s.action!.route)
+            } : undefined
+          });
+        });
 
       // 🎯 Générer les optimisations d'emplacements
       const optimizations = locationOptimizer.optimize({
