@@ -5,6 +5,7 @@ import onboardingRouter from './routes/onboarding';
 import productsRouter from './routes/products';
 import inventoryRouter from './routes/inventory';
 import locationsRouter from './routes/locations';
+import ordersRouter from './routes/orders';
 
 const app = new Hono();
 
@@ -17,5 +18,6 @@ app.route('/api/onboarding', onboardingRouter);
 app.route('/api/products', productsRouter);
 app.route('/api/inventory', inventoryRouter);
 app.route('/api/locations', locationsRouter);
+app.route('/api/orders', ordersRouter);
 
 export default app;
