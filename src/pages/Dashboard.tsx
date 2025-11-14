@@ -150,6 +150,16 @@ export default function Dashboard() {
       setProductAssociations(patternsResult.associations);
     } catch (error) {
       console.error('Erreur chargement dashboard:', error);
+      // Notification d'erreur pour l'utilisateur
+      addNotification({
+        type: 'error',
+        title: 'Erreur de chargement',
+        message: 'Impossible de charger les données du dashboard. Veuillez réessayer.',
+        action: {
+          label: 'Réessayer',
+          onClick: () => fetchDashboardData()
+        }
+      });
     } finally {
       setLoading(false);
     }
