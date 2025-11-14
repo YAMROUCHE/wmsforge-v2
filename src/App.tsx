@@ -12,32 +12,43 @@ import Settings from './pages/Settings';
 import Onboarding from './pages/Onboarding';
 import WarehouseDashboard from './pages/WarehouseDashboard';
 import { AuthProvider } from './contexts/AuthContext';
+import { SidebarProvider, useSidebar } from './contexts/SidebarContext';
 import Sidebar from './components/layout/Sidebar';
+
+function MainContent() {
+  const { isCollapsed } = useSidebar();
+
+  return (
+    <main className={`flex-1 transition-all duration-300 ${isCollapsed ? 'ml-16' : 'ml-60'}`}>
+      <Routes>
+        <Route path="/" element={<Landing />} />
+        <Route path="/auth" element={<Auth />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/products" element={<Products />} />
+        <Route path="/inventory" element={<Inventory />} />
+        <Route path="/orders" element={<Orders />} />
+        <Route path="/locations" element={<Locations />} />
+        <Route path="/reports" element={<Reports />} />
+        <Route path="/settings" element={<Settings />} />
+        <Route path="/onboarding" element={<Onboarding />} />
+        <Route path="/warehouse-dashboard" element={<WarehouseDashboard />} />
+        <Route path="*" element={<Navigate to="/" />} />
+      </Routes>
+    </main>
+  );
+}
 
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <div className="flex">
-          <Sidebar />
-          <main className="flex-1 ml-16">
-            <Routes>
-              <Route path="/" element={<Landing />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/products" element={<Products />} />
-              <Route path="/inventory" element={<Inventory />} />
-              <Route path="/orders" element={<Orders />} />
-              <Route path="/locations" element={<Locations />} />
-              <Route path="/reports" element={<Reports />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/onboarding" element={<Onboarding />} />
-              <Route path="/warehouse-dashboard" element={<WarehouseDashboard />} />
-              <Route path="*" element={<Navigate to="/" />} />
-            </Routes>
-          </main>
-        </div>
-      </Router>
+      <SidebarProvider>
+        <Router>
+          <div className="flex">
+            <Sidebar />
+            <MainContent />
+          </div>
+        </Router>
+      </SidebarProvider>
     </AuthProvider>
   );
 }

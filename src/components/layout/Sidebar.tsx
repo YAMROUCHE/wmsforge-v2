@@ -1,19 +1,20 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  Package, 
-  Boxes, 
-  ShoppingCart, 
-  MapPin, 
-  BarChart3, 
+import {
+  LayoutDashboard,
+  Package,
+  Boxes,
+  ShoppingCart,
+  MapPin,
+  BarChart3,
   Settings,
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
+import { useSidebar } from '../../contexts/SidebarContext';
 
 export default function Sidebar() {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const { isCollapsed, toggleSidebar } = useSidebar();
 
   const menuItems = [
     { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -34,7 +35,7 @@ export default function Sidebar() {
       {/* Toggle Button */}
       <div className="h-16 flex items-center justify-end px-4 border-b border-gray-200">
         <button
-          onClick={() => setIsCollapsed(!isCollapsed)}
+          onClick={toggleSidebar}
           className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
         >
           {isCollapsed ? (
