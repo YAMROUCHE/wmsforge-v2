@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Building2, MapPin, Layers, Package, Check, ArrowRight, ArrowLeft } from 'lucide-react';
 import { Button } from '../components/ui/Button';
@@ -60,14 +60,6 @@ export default function Onboarding() {
     }
   }, []);
 
-  useEffect(() => {
-    const stored = localStorage.getItem('warehouseConfig');
-    if (stored) {
-      const config = JSON.parse(stored);
-      setData(config);
-    }
-  }, []);
-
   const totalSteps = 5;
 
   const handleNext = () => {
@@ -76,8 +68,14 @@ export default function Onboarding() {
     } else {
       // Terminer l'onboarding et aller au dashboard
       localStorage.setItem('warehouseConfig', JSON.stringify(data));
-      navigate('/warehouse-dashboard');
+      localStorage.setItem('onboardingCompleted', 'true');
+      navigate('/dashboard');
     }
+  };
+
+  const handleSkip = () => {
+    localStorage.setItem('onboardingCompleted', 'true');
+    navigate('/dashboard');
   };
 
   const handleBack = () => {
@@ -454,32 +452,45 @@ export default function Onboarding() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 py-12 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-900 dark:to-gray-800 py-12 px-4">
       <div className="max-w-3xl mx-auto">
+        {/* Header with Skip button */}
+        <div className="flex justify-between items-center mb-8">
+          <div className="text-sm text-gray-600 dark:text-gray-300">
+            Configuration de votre entrepôt
+          </div>
+          <button
+            onClick={handleSkip}
+            className="text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
+          >
+            Passer cette étape →
+          </button>
+        </div>
+
         {/* Progress bar */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-700">
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
               Étape {step} sur {totalSteps}
             </span>
-            <span className="text-sm font-medium text-gray-700">
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
               {Math.round((step / totalSteps) * 100)}%
             </span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
+          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
             <div
-              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+              className="bg-blue-600 dark:bg-blue-500 h-2 rounded-full transition-all duration-300"
               style={{ width: `${(step / totalSteps) * 100}%` }}
             />
           </div>
         </div>
 
         {/* Card */}
-        <div className="bg-white rounded-2xl shadow-xl p-8">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
           {renderStep()}
 
           {/* Navigation */}
-          <div className="flex justify-between mt-8 pt-6 border-t border-gray-200">
+          <div className="flex justify-between mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
             <Button
               variant="secondary"
               onClick={handleBack}

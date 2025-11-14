@@ -64,8 +64,9 @@ export default function Auth() {
 
     try {
       await register(registerName, registerEmail, registerPassword, registerOrganization);
-      setSuccess('Inscription réussie ! Redirection...');
-      setTimeout(() => navigate('/dashboard'), 1000);
+      setSuccess('Inscription réussie ! Redirection vers l\'onboarding...');
+      // Nouveaux utilisateurs vont vers l'onboarding
+      setTimeout(() => navigate('/onboarding'), 1000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erreur d'inscription");
     }
