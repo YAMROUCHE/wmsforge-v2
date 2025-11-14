@@ -4,8 +4,10 @@ import { useNavigate } from 'react-router-dom';
 import AppLayout from '../components/layout/AppLayout';
 import SuggestionsPanel from '../components/SuggestionsPanel';
 import LocationOptimizationsPanel from '../components/LocationOptimizationsPanel';
+import OrderPatternsPanel from '../components/OrderPatternsPanel';
 import { suggestionsEngine, Suggestion } from '../utils/suggestionsEngine';
 import { locationOptimizer, LocationOptimization } from '../utils/locationOptimizer';
+import { orderPatternsAnalyzer, OrderPattern, ProductAssociation } from '../utils/orderPatternsAnalyzer';
 
 interface DashboardStats {
   totalProducts: number;
@@ -42,6 +44,8 @@ export default function Dashboard() {
   const [recentMovements, setRecentMovements] = useState<Movement[]>([]);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [locationOptimizations, setLocationOptimizations] = useState<LocationOptimization[]>([]);
+  const [orderPatterns, setOrderPatterns] = useState<OrderPattern[]>([]);
+  const [productAssociations, setProductAssociations] = useState<ProductAssociation[]>([]);
 
   useEffect(() => {
     fetchDashboardData();
@@ -116,6 +120,14 @@ export default function Dashboard() {
         orders: orders.orders || []
       });
       setLocationOptimizations(optimizations);
+
+      // 🧠 Analyser les patterns de commandes (Market Basket Analysis)
+      const patternsResult = orderPatternsAnalyzer.analyze({
+        orders: orders.orders || [],
+        inventory: inventory.items || []
+      });
+      setOrderPatterns(patternsResult.patterns);
+      setProductAssociations(patternsResult.associations);
     } catch (error) {
       console.error('Erreur chargement dashboard:', error);
     } finally {
@@ -185,9 +197,18 @@ export default function Dashboard() {
         </div>
 
         {/* 🤖 AI Panels - Suggestions & Location Optimization */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           <SuggestionsPanel suggestions={suggestions} loading={loading} />
           <LocationOptimizationsPanel optimizations={locationOptimizations} loading={loading} />
+        </div>
+
+        {/* 🧠 Order Patterns Analysis (Market Basket) */}
+        <div className="mb-8">
+          <OrderPatternsPanel
+            patterns={orderPatterns}
+            associations={productAssociations}
+            loading={loading}
+          />
         </div>
 
         {/* Stats Grid */}
