@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Search, Upload, Edit, Trash2, Package, Filter, Download } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
+import ExportButton from '../components/ExportButton';
 
 interface Product {
   id: number;
@@ -158,15 +159,16 @@ export default function Products() {
               <h1 className="text-2xl font-bold text-gray-900">Gestion des Produits</h1>
             </div>
             <div className="flex space-x-3">
-              <Button 
-                variant="secondary" 
+              <ExportButton type="products" data={products} />
+              <Button
+                variant="secondary"
                 onClick={handleImportCSV}
                 className="flex items-center gap-2"
               >
                 <Upload className="w-4 h-4" />
                 Import CSV
               </Button>
-              <Button 
+              <Button
                 onClick={() => setShowAddModal(true)}
                 className="flex items-center gap-2"
               >

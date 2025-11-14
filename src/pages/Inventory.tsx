@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Package, Plus, ArrowRight, RefreshCw, AlertCircle, TrendingUp, TrendingDown, Box } from 'lucide-react';
 import { Button } from '../components/ui/Button';
+import ExportButton from '../components/ExportButton';
 
 interface InventoryItem {
   id: number;
@@ -230,7 +231,8 @@ export default function Inventory() {
               <h1 className="text-2xl font-bold text-gray-900">Gestion d'Inventaire</h1>
             </div>
             <div className="flex space-x-3">
-              <Button 
+              <ExportButton type="inventory" data={inventory} />
+              <Button
                 variant="secondary"
                 onClick={() => setShowMoveModal(true)}
                 className="flex items-center gap-2"
@@ -238,7 +240,7 @@ export default function Inventory() {
                 <ArrowRight className="w-4 h-4" />
                 Déplacer Stock
               </Button>
-              <Button 
+              <Button
                 variant="secondary"
                 onClick={() => setShowAdjustModal(true)}
                 className="flex items-center gap-2"
@@ -246,7 +248,7 @@ export default function Inventory() {
                 <RefreshCw className="w-4 h-4" />
                 Ajuster Stock
               </Button>
-              <Button 
+              <Button
                 onClick={() => setShowReceiveModal(true)}
                 className="flex items-center gap-2"
               >

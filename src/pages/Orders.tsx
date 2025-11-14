@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ShoppingCart, Plus, Package, TrendingUp, Clock, CheckCircle, Truck, XCircle } from 'lucide-react';
 import { Button } from '../components/ui/Button';
+import ExportButton from '../components/ExportButton';
 
 interface Order {
   id: number;
@@ -262,10 +263,13 @@ export default function Orders() {
               <p className="text-gray-600">Gestion des commandes clients et fournisseurs</p>
             </div>
           </div>
-          <Button onClick={() => setShowCreateModal(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Nouvelle Commande
-          </Button>
+          <div className="flex space-x-3">
+            <ExportButton type="orders" data={orders} />
+            <Button onClick={() => setShowCreateModal(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              Nouvelle Commande
+            </Button>
+          </div>
         </div>
 
         {/* Statistiques */}
