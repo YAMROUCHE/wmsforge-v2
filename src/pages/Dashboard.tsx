@@ -3,7 +3,9 @@ import { TrendingUp, TrendingDown, Package, ShoppingCart, Activity, AlertTriangl
 import { useNavigate } from 'react-router-dom';
 import AppLayout from '../components/layout/AppLayout';
 import SuggestionsPanel from '../components/SuggestionsPanel';
+import LocationOptimizationsPanel from '../components/LocationOptimizationsPanel';
 import { suggestionsEngine, Suggestion } from '../utils/suggestionsEngine';
+import { locationOptimizer, LocationOptimization } from '../utils/locationOptimizer';
 
 interface DashboardStats {
   totalProducts: number;
@@ -39,6 +41,7 @@ export default function Dashboard() {
   });
   const [recentMovements, setRecentMovements] = useState<Movement[]>([]);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [locationOptimizations, setLocationOptimizations] = useState<LocationOptimization[]>([]);
 
   useEffect(() => {
     fetchDashboardData();
@@ -104,6 +107,15 @@ export default function Dashboard() {
         totalProducts: products.pagination?.total || 0
       });
       setSuggestions(aiSuggestions);
+
+      // 🎯 Générer les optimisations d'emplacements
+      const optimizations = locationOptimizer.optimize({
+        movements: movements.movements || [],
+        inventory: inventory.items || [],
+        locations: locations.locations || [],
+        orders: orders.orders || []
+      });
+      setLocationOptimizations(optimizations);
     } catch (error) {
       console.error('Erreur chargement dashboard:', error);
     } finally {
@@ -172,9 +184,10 @@ export default function Dashboard() {
           </p>
         </div>
 
-        {/* 🤖 AI Suggestions Panel */}
-        <div className="mb-8">
+        {/* 🤖 AI Panels - Suggestions & Location Optimization */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           <SuggestionsPanel suggestions={suggestions} loading={loading} />
+          <LocationOptimizationsPanel optimizations={locationOptimizations} loading={loading} />
         </div>
 
         {/* Stats Grid */}
