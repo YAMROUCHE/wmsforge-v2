@@ -37,11 +37,11 @@ export default function Landing() {
           <h1 className="text-5xl font-bold text-gray-900 mb-6">
             Le WMS nouvelle génération
             <br />
-            <span className="text-blue-600">inspiré de Manhattan</span>
+            <span className="text-blue-600">à la hauteur des géants</span>
           </h1>
           <p className="text-xl text-gray-600 mb-8">
-            De la PME à l'Enterprise, gérez votre entrepôt avec l'intelligence
-            des leaders du marché, sans la complexité.
+            De la PME à l'Enterprise, bénéficiez de l'intelligence
+            des solutions premium mondiales, sans la complexité ni le prix.
           </p>
           <div className="flex justify-center space-x-4">
             <Link to="/auth">
@@ -63,7 +63,7 @@ export default function Landing() {
       <section className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4">
           <h2 className="text-3xl font-bold text-center mb-12">
-            Fonctionnalités Manhattan-like
+            Fonctionnalités enterprise-grade
           </h2>
           <div className="grid md:grid-cols-3 gap-8">
             <div className="bg-white p-6 rounded-xl shadow-sm">
@@ -125,9 +125,9 @@ export default function Landing() {
                 3
               </div>
               <div>
-                <h3 className="text-xl font-semibold mb-2">Manhattan-like</h3>
+                <h3 className="text-xl font-semibold mb-2">Enterprise Premium</h3>
                 <p className="text-gray-600">
-                  Enterprise : WES, IA/ML, Digital Twin, 2000+ commandes/jour
+                  Au niveau des géants : WES, IA/ML, Digital Twin, 2000+ commandes/jour
                 </p>
               </div>
             </div>
@@ -155,7 +155,7 @@ export default function Landing() {
       {/* Footer */}
       <footer className="bg-white border-t border-gray-200 py-8">
         <div className="max-w-7xl mx-auto px-4 text-center text-gray-600">
-          <p>© 2025 1wms.io - From MVP to Manhattan</p>
+          <p>© 2025 1wms.io - Du MVP à l'Enterprise</p>
         </div>
       </footer>
     </div>
