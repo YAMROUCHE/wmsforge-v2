@@ -178,27 +178,23 @@ export class WaveEngine {
     orders.forEach(order => {
       const orderLines = order.items?.reduce((sum, item) => sum + 1, 0) || 1;
 
-      // Vérifier si l'ajout dépasse les limites
-      const wouldExceedOrders = currentBatch.length + 1 > this.config.max_orders_per_wave;
-      const wouldExceedLines = currentLines + orderLines > this.config.max_lines_per_wave;
-
-      if (wouldExceedOrders || wouldExceedLines) {
+      // Si le batch actuel est plein, créer une vague AVANT d'ajouter la nouvelle commande
+      if (currentBatch.length >= this.config.max_orders_per_wave ||
+          (currentBatch.length > 0 && currentLines + orderLines > this.config.max_lines_per_wave)) {
         // Créer vague avec le batch actuel
-        if (currentBatch.length > 0) {
-          waves.push(this.createWave(currentBatch, groupKey, waveNumber));
-          waveNumber++;
-        }
+        waves.push(this.createWave(currentBatch, groupKey, waveNumber));
+        waveNumber++;
         // Commencer nouveau batch
-        currentBatch = [order];
-        currentLines = orderLines;
-      } else {
-        // Ajouter à la batch actuelle
-        currentBatch.push(order);
-        currentLines += orderLines;
+        currentBatch = [];
+        currentLines = 0;
       }
+
+      // Ajouter la commande au batch actuel
+      currentBatch.push(order);
+      currentLines += orderLines;
     });
 
-    // Créer dernière vague
+    // Créer dernière vague avec les commandes restantes
     if (currentBatch.length > 0) {
       waves.push(this.createWave(currentBatch, groupKey, waveNumber));
     }
