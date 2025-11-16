@@ -7,6 +7,9 @@ import inventoryRouter from './routes/inventory';
 import locationsRouter from './routes/locations';
 import ordersRouter from './routes/orders';
 import settingsRouter from './routes/settings';
+import wavesRouter from './routes/waves';
+import tasksRouter from './routes/tasks';
+import laborRouter from './routes/labor';
 
 const app = new Hono();
 
@@ -21,5 +24,8 @@ app.route('/api/inventory', inventoryRouter);
 app.route('/api/locations', locationsRouter);
 app.route('/api/orders', ordersRouter);
 app.route('/api/settings', settingsRouter);
+app.route('/api/waves', wavesRouter);
+app.route('/api/tasks', tasksRouter);
+app.route('/api/labor', laborRouter);
 
 export default app;
