@@ -10,6 +10,9 @@ import settingsRouter from './routes/settings';
 import wavesRouter from './routes/waves';
 import tasksRouter from './routes/tasks';
 import laborRouter from './routes/labor';
+import integrationsRouter from './routes/integrations';
+import testimonialsRouter from './routes/testimonials';
+import referralsRouter from './routes/referrals';
 
 const app = new Hono();
 
@@ -17,7 +20,7 @@ app.use('/*', cors());
 
 app.get('/health', (c) => c.json({ status: 'ok' }));
 
-app.route('/auth', auth);
+app.route('/api/auth', auth);
 app.route('/api/onboarding', onboardingRouter);
 app.route('/api/products', productsRouter);
 app.route('/api/inventory', inventoryRouter);
@@ -27,5 +30,8 @@ app.route('/api/settings', settingsRouter);
 app.route('/api/waves', wavesRouter);
 app.route('/api/tasks', tasksRouter);
 app.route('/api/labor', laborRouter);
+app.route('/api/integrations', integrationsRouter);
+app.route('/api/testimonials', testimonialsRouter);
+app.route('/api/referrals', referralsRouter);
 
 export default app;

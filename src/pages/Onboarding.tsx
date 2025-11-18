@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Building2, MapPin, Layers, Package, Check, ArrowRight, ArrowLeft } from 'lucide-react';
+import { Building2, MapPin, Layers, Package, Check, ArrowRight, ArrowLeft, PackageOpen, Warehouse, Target, Truck, Snowflake } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 
 interface OnboardingData {
@@ -26,11 +26,11 @@ interface OnboardingData {
 }
 
 const ZONE_CATEGORIES = [
-  { value: 'receiving', label: 'Réception', color: 'bg-blue-500', icon: '📦' },
-  { value: 'storage', label: 'Stockage', color: 'bg-green-500', icon: '🏢' },
-  { value: 'picking', label: 'Picking', color: 'bg-yellow-500', icon: '🎯' },
-  { value: 'shipping', label: 'Expédition', color: 'bg-orange-500', icon: '🚚' },
-  { value: 'cold', label: 'Zone froide', color: 'bg-cyan-500', icon: '❄️' },
+  { value: 'receiving', label: 'Réception', color: 'bg-blue-500', Icon: PackageOpen },
+  { value: 'storage', label: 'Stockage', color: 'bg-green-500', Icon: Warehouse },
+  { value: 'picking', label: 'Picking', color: 'bg-yellow-500', Icon: Target },
+  { value: 'shipping', label: 'Expédition', color: 'bg-orange-500', Icon: Truck },
+  { value: 'cold', label: 'Zone froide', color: 'bg-cyan-500', Icon: Snowflake },
 ];
 
 export default function Onboarding() {
@@ -141,7 +141,7 @@ export default function Onboarding() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Nom de l'entrepôt *
               </label>
               <input
@@ -154,7 +154,7 @@ export default function Onboarding() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Adresse
               </label>
               <input
@@ -168,7 +168,7 @@ export default function Onboarding() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Surface totale (m²) *
                 </label>
                 <input
@@ -181,7 +181,7 @@ export default function Onboarding() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Hauteur sous plafond (m)
                 </label>
                 <input
@@ -211,7 +211,7 @@ export default function Onboarding() {
                 <div key={zone.id} className="p-4 border border-gray-200 rounded-lg bg-gray-50">
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Nom de la zone</label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Nom de la zone</label>
                       <input
                         type="text"
                         value={zone.name}
@@ -222,7 +222,7 @@ export default function Onboarding() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Type</label>
                       <select
                         value={zone.category}
                         onChange={(e) => updateZone(zone.id, 'category', e.target.value)}
@@ -230,7 +230,7 @@ export default function Onboarding() {
                       >
                         {ZONE_CATEGORIES.map(cat => (
                           <option key={cat.value} value={cat.value}>
-                            {cat.icon} {cat.label}
+                            {cat.label}
                           </option>
                         ))}
                       </select>
@@ -239,7 +239,7 @@ export default function Onboarding() {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Surface (m²)</label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Surface (m²)</label>
                       <input
                         type="number"
                         value={zone.area || ''}
@@ -250,7 +250,7 @@ export default function Onboarding() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Nombre d'allées</label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Nombre d'allées</label>
                       <input
                         type="number"
                         value={zone.aisleCount || ''}
@@ -291,7 +291,7 @@ export default function Onboarding() {
 
             <div className="grid grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Largeur de passage (m)
                 </label>
                 <input
@@ -306,7 +306,7 @@ export default function Onboarding() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Racks par allée
                 </label>
                 <input
@@ -333,7 +333,7 @@ export default function Onboarding() {
 
             <div className="grid grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Niveaux par rack
                 </label>
                 <input
@@ -347,7 +347,7 @@ export default function Onboarding() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Emplacements par niveau
                 </label>
                 <input
@@ -363,7 +363,7 @@ export default function Onboarding() {
 
             {/* Calcul automatique */}
             <div className="mt-8 p-6 bg-blue-50 border border-blue-200 rounded-lg">
-              <h3 className="font-semibold text-blue-900 mb-4">📊 Capacité totale estimée</h3>
+              <h3 className="font-semibold text-blue-900 mb-4">Capacité totale estimée</h3>
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <p className="text-gray-600">Emplacements par allée :</p>
@@ -422,10 +422,12 @@ export default function Onboarding() {
                 <div className="space-y-3">
                   {data.zones.map((zone) => {
                     const cat = ZONE_CATEGORIES.find(c => c.value === zone.category);
+                    const IconComponent = cat?.Icon;
                     return (
                       <div key={zone.id} className="flex items-center justify-between text-sm">
-                        <span className="font-medium">
-                          {cat?.icon} {zone.name}
+                        <span className="font-medium flex items-center gap-2">
+                          {IconComponent && <IconComponent className="w-4 h-4" />}
+                          {zone.name}
                         </span>
                         <span className="text-gray-600">
                           {zone.area} m² • {zone.aisleCount} allées
@@ -438,7 +440,7 @@ export default function Onboarding() {
 
               {/* Capacité */}
               <div className="p-6 bg-green-50 rounded-lg border border-green-200">
-                <h3 className="font-semibold text-green-900 mb-4">📦 Capacité totale</h3>
+                <h3 className="font-semibold text-green-900 mb-4">Capacité totale</h3>
                 <p className="text-4xl font-bold text-green-900">{totalCapacity.toLocaleString()}</p>
                 <p className="text-green-700 mt-1">emplacements de palettes</p>
               </div>

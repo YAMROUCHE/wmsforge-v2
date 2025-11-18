@@ -1,3 +1,4 @@
+import { optionalAuthMiddleware, getAuthUser } from '../middleware/auth';
 import { Hono } from 'hono';
 
 const app = new Hono<{
@@ -6,8 +7,12 @@ const app = new Hono<{
   };
 }>();
 
+app.use('/*', optionalAuthMiddleware);
+
 // GET /api/locations
 app.get('/', async (c) => {
+  const authUser = c.get("user");
+  const organizationId = authUser?.organizationId || 1;
   try {
     const result = await c.env.DB.prepare(
       'SELECT * FROM locations'
@@ -22,6 +27,8 @@ app.get('/', async (c) => {
 
 // POST /api/locations - VERSION SIMPLIFIÉE
 app.post('/', async (c) => {
+  const authUser = c.get("user");
+  const organizationId = authUser?.organizationId || 1;
   try {
     const body = await c.req.json();
 
@@ -30,7 +37,7 @@ app.post('/', async (c) => {
         organization_id, code, name, type, capacity, created_at
       ) VALUES (?, ?, ?, ?, ?, ?)
     `).bind(
-      1,
+      organizationId,
       body.code,
       body.name,
       body.type || 'rack',
@@ -47,6 +54,8 @@ app.post('/', async (c) => {
 
 // GET /api/locations/stats - Statistiques des emplacements
 app.get('/stats', async (c) => {
+  const authUser = c.get("user");
+  const organizationId = authUser?.organizationId || 1;
   try {
     const stats = await c.env.DB.prepare(`
       SELECT
@@ -58,7 +67,7 @@ app.get('/stats', async (c) => {
         SUM(capacity) as total_capacity
       FROM locations
       WHERE organization_id = ?
-    `).bind(1).first();
+    `).bind(organizationId).first();
 
     return c.json({ stats: stats || {} });
   } catch (error) {
@@ -69,12 +78,14 @@ app.get('/stats', async (c) => {
 
 // GET /api/locations/:id - Détails d'un emplacement
 app.get('/:id', async (c) => {
+  const authUser = c.get("user");
+  const organizationId = authUser?.organizationId || 1;
   try {
     const locationId = c.req.param('id');
 
     const location = await c.env.DB.prepare(`
       SELECT * FROM locations WHERE id = ? AND organization_id = ?
-    `).bind(locationId, 1).first();
+    `).bind(locationId, organizationId).first();
 
     if (!location) {
       return c.json({ error: 'Location not found' }, 404);
@@ -89,6 +100,8 @@ app.get('/:id', async (c) => {
 
 // PUT /api/locations/:id - Mettre à jour un emplacement
 app.put('/:id', async (c) => {
+  const authUser = c.get("user");
+  const organizationId = authUser?.organizationId || 1;
   try {
     const locationId = c.req.param('id');
     const body = await c.req.json();
@@ -103,7 +116,7 @@ app.put('/:id', async (c) => {
       body.type,
       body.capacity || null,
       locationId,
-      1
+      organizationId
     ).run();
 
     return c.json({ message: 'Location updated successfully' });
@@ -115,12 +128,14 @@ app.put('/:id', async (c) => {
 
 // DELETE /api/locations/:id - Supprimer un emplacement
 app.delete('/:id', async (c) => {
+  const authUser = c.get("user");
+  const organizationId = authUser?.organizationId || 1;
   try {
     const locationId = c.req.param('id');
 
     await c.env.DB.prepare(`
       DELETE FROM locations WHERE id = ? AND organization_id = ?
-    `).bind(locationId, 1).run();
+    `).bind(locationId, organizationId).run();
 
     return c.json({ message: 'Location deleted successfully' });
   } catch (error) {

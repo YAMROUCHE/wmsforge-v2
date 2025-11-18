@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Package, Home, MapPin, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Package, Home, MapPin, AlertCircle, PackageOpen, Warehouse, Target, Truck, Snowflake } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface ZoneData {
@@ -26,11 +26,11 @@ const ZONE_COLORS = {
 };
 
 const ZONE_ICONS = {
-  reception: '📦',
-  storage: '🏢',
-  picking: '🎯',
-  shipping: '🚚',
-  cold: '❄️',
+  reception: PackageOpen,
+  storage: Warehouse,
+  picking: Target,
+  shipping: Truck,
+  cold: Snowflake,
 };
 
 const ZONE_LABELS = {
@@ -180,7 +180,9 @@ export default function WarehouseDashboard() {
                   ${selectedZone === zone.id ? 'ring-2 ring-blue-500 ring-offset-2' : ''}
                 `}
               >
-                <div className="text-3xl mb-2">{ZONE_ICONS[zone.category]}</div>
+                <div className="mb-2">
+                  {React.createElement(ZONE_ICONS[zone.category], { className: "w-8 h-8 text-gray-700 dark:text-gray-300" })}
+                </div>
                 <div className="font-semibold text-gray-900">{zone.name}</div>
                 <div className="text-sm text-gray-600 mt-1">
                   {zone.surface} m²
@@ -229,7 +231,7 @@ export default function WarehouseDashboard() {
               <div className="p-6 space-y-6">
                 {/* Informations générales */}
                 <div>
-                  <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-3">
+                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-3">
                     Informations générales
                   </h3>
                   <div className="space-y-3">
@@ -253,7 +255,7 @@ export default function WarehouseDashboard() {
                 {/* Configuration de stockage */}
                 {(selectedZoneData.category === 'storage' || selectedZoneData.category === 'picking') && (
                   <div>
-                    <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-3">
+                    <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-3">
                       Configuration de stockage
                     </h3>
                     <div className="space-y-3">
@@ -283,7 +285,7 @@ export default function WarehouseDashboard() {
 
                 {/* Capacité */}
                 <div>
-                  <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-3">
+                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-3">
                     Capacité totale
                   </h3>
                   <div className="bg-blue-50 rounded-lg p-4">
@@ -297,7 +299,7 @@ export default function WarehouseDashboard() {
                 {/* Visualisation */}
                 {selectedZoneData.aisleCount && (
                   <div>
-                    <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-3">
+                    <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-3">
                       Visualisation des allées
                     </h3>
                     <div className="grid grid-cols-3 gap-2">
@@ -320,7 +322,7 @@ export default function WarehouseDashboard() {
                   </button>
                   <button
                     onClick={() => setSelectedZone(null)}
-                    className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                    className="w-full px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 transition-colors"
                   >
                     Fermer
                   </button>

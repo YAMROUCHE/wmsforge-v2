@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { drizzle } from 'drizzle-orm/d1';
 import { eq, and, like, desc, asc, sql } from 'drizzle-orm';
 import { products } from '../../../db/schema';
+import { authMiddleware, optionalAuthMiddleware, getAuthUser } from '../middleware/auth';
 
 const app = new Hono<{
   Bindings: {
@@ -9,13 +10,21 @@ const app = new Hono<{
   };
 }>();
 
+// Apply auth middleware to all routes
+app.use('/*', authMiddleware);
+
 // GET /api/products - Liste des produits
 app.get('/', async (c) => {
   try {
     const db = drizzle(c.env.DB);
+    const { organizationId } = getAuthUser(c);
     
-    // Pour l'instant, on récupère tous les produits sans filtre
-    const items = await db.select().from(products).all();
+    // Filter by organization
+    const items = await db
+      .select()
+      .from(products)
+      .where(eq(products.organizationId, organizationId))
+      .all();
     
     return c.json({
       items: items || [],
@@ -36,6 +45,7 @@ app.get('/', async (c) => {
 app.post('/', async (c) => {
   try {
     const db = drizzle(c.env.DB);
+    const { organizationId } = getAuthUser(c);
     const body = await c.req.json();
     
     // Calculer le volume si dimensions fournies
@@ -45,7 +55,7 @@ app.post('/', async (c) => {
     }
     
     const newProduct = {
-      organizationId: 1, // Org par défaut pour l'instant
+      organizationId, // Use authenticated user's organization
       sku: body.sku,
       name: body.name,
       description: body.description || null,
@@ -89,12 +99,16 @@ app.post('/', async (c) => {
 app.get('/:id', async (c) => {
   try {
     const db = drizzle(c.env.DB);
+    const { organizationId } = getAuthUser(c);
     const id = parseInt(c.req.param('id'));
     
     const product = await db
       .select()
       .from(products)
-      .where(eq(products.id, id))
+      .where(and(
+        eq(products.id, id),
+        eq(products.organizationId, organizationId) // Security: only show products from user's org
+      ))
       .get();
     
     if (!product) {
@@ -112,14 +126,18 @@ app.get('/:id', async (c) => {
 app.put('/:id', async (c) => {
   try {
     const db = drizzle(c.env.DB);
+    const { organizationId } = getAuthUser(c);
     const id = parseInt(c.req.param('id'));
     const body = await c.req.json();
     
-    // Vérifier que le produit existe
+    // Vérifier que le produit existe et appartient à l'organization
     const existing = await db
       .select()
       .from(products)
-      .where(eq(products.id, id))
+      .where(and(
+        eq(products.id, id),
+        eq(products.organizationId, organizationId)
+      ))
       .get();
     
     if (!existing) {
@@ -148,7 +166,10 @@ app.put('/:id', async (c) => {
     await db
       .update(products)
       .set(updatedProduct)
-      .where(eq(products.id, id));
+      .where(and(
+        eq(products.id, id),
+        eq(products.organizationId, organizationId)
+      ));
     
     return c.json({
       message: 'Product updated successfully',
@@ -164,6 +185,7 @@ app.put('/:id', async (c) => {
 app.delete('/:id', async (c) => {
   try {
     const db = drizzle(c.env.DB);
+    const { organizationId } = getAuthUser(c);
     const id = parseInt(c.req.param('id'));
     
     await db
@@ -172,7 +194,10 @@ app.delete('/:id', async (c) => {
         status: 'discontinued',
         updatedAt: new Date().toISOString()
       })
-      .where(eq(products.id, id));
+      .where(and(
+        eq(products.id, id),
+        eq(products.organizationId, organizationId)
+      ));
     
     return c.json({
       message: 'Product deleted successfully'

@@ -1,3 +1,4 @@
+import { optionalAuthMiddleware, getAuthUser } from '../middleware/auth';
 import { Hono } from 'hono';
 
 const app = new Hono<{
@@ -6,8 +7,12 @@ const app = new Hono<{
   };
 }>();
 
+app.use('/*', optionalAuthMiddleware);
+
 // GET /api/inventory
 app.get('/', async (c) => {
+  const authUser = c.get("user");
+  const organizationId = authUser?.organizationId || 1;
   try {
     const result = await c.env.DB.prepare('SELECT * FROM inventory').all();
     return c.json({ items: result.results || [] });
@@ -19,6 +24,8 @@ app.get('/', async (c) => {
 
 // POST /api/inventory/receive - VERSION SIMPLIFIÉE
 app.post('/receive', async (c) => {
+  const authUser = c.get("user");
+  const organizationId = authUser?.organizationId || 1;
   try {
     const body = await c.req.json();
     
@@ -39,14 +46,14 @@ app.post('/receive', async (c) => {
       await c.env.DB.prepare(`
         INSERT INTO inventory (organization_id, product_id, location_id, quantity, updated_at)
         VALUES (?, ?, ?, ?, ?)
-      `).bind(1, body.productId, body.locationId, body.quantity, new Date().toISOString()).run();
+      `).bind(organizationId, body.productId, body.locationId, body.quantity, new Date().toISOString()).run();
     }
     
     // Enregistrer le mouvement
     await c.env.DB.prepare(`
       INSERT INTO stock_movements (organization_id, type, product_id, location_id, quantity, user_id, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).bind(1, 'RECEIVE', body.productId, body.locationId, body.quantity, 1, new Date().toISOString()).run();
+    `).bind(organizationId, 'RECEIVE', body.productId, body.locationId, body.quantity, 1, new Date().toISOString()).run();
     
     return c.json({ message: 'Stock received successfully', quantity: body.quantity });
   } catch (error) {
@@ -57,6 +64,8 @@ app.post('/receive', async (c) => {
 
 // GET /api/inventory/movements
 app.get('/movements', async (c) => {
+  const authUser = c.get("user");
+  const organizationId = authUser?.organizationId || 1;
   try {
     const result = await c.env.DB.prepare(
       'SELECT * FROM stock_movements ORDER BY created_at DESC LIMIT 50'

@@ -21,15 +21,15 @@ export default function Navbar() {
   ];
 
   return (
-    <header className="bg-white border-b border-gray-200">
+    <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-black flex items-center justify-center">
-              <span className="text-white font-bold text-lg">1</span>
+            <div className="w-8 h-8 bg-black dark:bg-white flex items-center justify-center">
+              <span className="text-white dark:text-black font-bold text-lg">1</span>
             </div>
-            <span className="text-xl font-semibold">wms.io</span>
+            <span className="text-xl font-semibold text-gray-900 dark:text-gray-100">wms.io</span>
           </div>
 
           {/* Navigation */}
@@ -45,18 +45,18 @@ export default function Navbar() {
                   disabled={item.disabled}
                   className={`
                     flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors
-                    ${isActive 
-                      ? 'bg-gray-100 text-gray-900' 
+                    ${isActive
+                      ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100'
                       : item.disabled
-                        ? 'text-gray-400 cursor-not-allowed'
-                        : 'text-gray-700 hover:bg-gray-50'
+                        ? 'text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                        : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                     }
                   `}
                 >
                   <Icon className="w-4 h-4" />
                   <span>{item.label}</span>
                   {item.disabled && (
-                    <span className="text-xs text-gray-400">(bientôt)</span>
+                    <span className="text-xs text-gray-400 dark:text-gray-500">(bientôt)</span>
                   )}
                 </button>
               );
@@ -65,7 +65,7 @@ export default function Navbar() {
 
           {/* User Menu */}
           <div className="flex items-center space-x-4">
-            <span className="text-sm text-gray-600 hidden sm:block">
+            <span className="text-sm text-gray-600 dark:text-gray-400 hidden sm:block">
               {user?.email}
             </span>
             <Button variant="ghost" onClick={handleLogout}>

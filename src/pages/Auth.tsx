@@ -1,5 +1,5 @@
 import { useState, FormEvent, ChangeEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -10,8 +10,13 @@ type AuthMode = 'login' | 'register';
 
 export default function Auth() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { login, register, isLoading } = useAuth();
-  const [mode, setMode] = useState<AuthMode>('login');
+  const [mode, setMode] = useState<AuthMode>(() => {
+    // Si le paramètre ?mode=register est présent, on commence en mode inscription
+    const urlMode = searchParams.get('mode');
+    return urlMode === 'register' ? 'register' : 'login';
+  });
   const [error, setError] = useState<string>('');
   const [success, setSuccess] = useState<string>('');
 

@@ -1,15 +1,20 @@
+import { optionalAuthMiddleware, getAuthUser } from '../middleware/auth';
 import { Hono } from 'hono';
 
 const app = new Hono<{ Bindings: { DB: D1Database } }>();
 
+app.use('/*', optionalAuthMiddleware);
+
 // GET /api/labor/operators - Liste des opérateurs
 app.get('/operators', async (c) => {
+    const authUser = c.get("user");
+    const organizationId = authUser?.organizationId || 1;
   try {
     const result = await c.env.DB.prepare(`
       SELECT * FROM operators
       WHERE organization_id = ?
       ORDER BY name
-    `).bind(1).all();
+    `).bind(organizationId).all();
 
     return c.json({ operators: result.results || [] });
   } catch (error) {
@@ -19,6 +24,8 @@ app.get('/operators', async (c) => {
 
 // GET /api/labor/performance - Performances quotidiennes
 app.get('/performance', async (c) => {
+    const authUser = c.get("user");
+    const organizationId = authUser?.organizationId || 1;
   try {
     const { date } = c.req.query();
     const targetDate = date || new Date().toISOString().split('T')[0];
@@ -42,6 +49,8 @@ app.get('/performance', async (c) => {
 
 // GET /api/labor/leaderboard - Leaderboard du jour
 app.get('/leaderboard', async (c) => {
+    const authUser = c.get("user");
+    const organizationId = authUser?.organizationId || 1;
   try {
     const { date } = c.req.query();
     const targetDate = date || new Date().toISOString().split('T')[0];
@@ -70,6 +79,8 @@ app.get('/leaderboard', async (c) => {
 
 // GET /api/labor/badges - Liste des badges disponibles
 app.get('/badges', async (c) => {
+    const authUser = c.get("user");
+    const organizationId = authUser?.organizationId || 1;
   try {
     const result = await c.env.DB.prepare(`
       SELECT * FROM badges
@@ -84,6 +95,8 @@ app.get('/badges', async (c) => {
 
 // GET /api/labor/team-stats - Statistiques d'équipe
 app.get('/team-stats', async (c) => {
+    const authUser = c.get("user");
+    const organizationId = authUser?.organizationId || 1;
   try {
     const { date } = c.req.query();
     const targetDate = date || new Date().toISOString().split('T')[0];
@@ -108,6 +121,8 @@ app.get('/team-stats', async (c) => {
 
 // POST /api/labor/performance - Enregistrer une performance
 app.post('/performance', async (c) => {
+    const authUser = c.get("user");
+    const organizationId = authUser?.organizationId || 1;
   try {
     const perf = await c.req.json();
 

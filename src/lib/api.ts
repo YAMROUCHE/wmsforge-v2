@@ -53,7 +53,7 @@ export class ApiError extends Error {
   }
 }
 
-async function fetchAPI<T>(
+export async function fetchAPI<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
@@ -83,7 +83,7 @@ async function fetchAPI<T>(
 }
 
 export async function register(data: RegisterData): Promise<AuthResponse> {
-  const response = await fetchAPI<AuthResponse>('/auth/register', {
+  const response = await fetchAPI<AuthResponse>('/api/auth/signup', {
     method: 'POST',
     body: JSON.stringify(data),
   });
@@ -92,7 +92,7 @@ export async function register(data: RegisterData): Promise<AuthResponse> {
 }
 
 export async function login(data: LoginData): Promise<AuthResponse> {
-  const response = await fetchAPI<AuthResponse>('/auth/login', {
+  const response = await fetchAPI<AuthResponse>('/api/auth/login', {
     method: 'POST',
     body: JSON.stringify(data),
   });
@@ -101,7 +101,7 @@ export async function login(data: LoginData): Promise<AuthResponse> {
 }
 
 export async function getCurrentUser(): Promise<User> {
-  return fetchAPI<User>('/auth/me');
+  return fetchAPI<User>('/api/auth/me');
 }
 
 export async function logout(): Promise<void> {

@@ -1,13 +1,27 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Settings as SettingsIcon, User, Building, Bell, Palette, Save } from 'lucide-react';
 import { Button } from '../components/ui/Button';
+import {
+  useSettings,
+  useUpdateProfile,
+  useUpdateOrganization,
+  useUpdateNotifications,
+  useUpdateAppearance
+} from '../hooks/useSettings';
+import { useNotifications } from '../contexts/NotificationContext';
 
 type Tab = 'profile' | 'organization' | 'notifications' | 'appearance';
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState<Tab>('profile');
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const { addNotification } = useNotifications();
+
+  // React Query hooks
+  const { data: settings, isLoading } = useSettings();
+  const updateProfile = useUpdateProfile();
+  const updateOrganization = useUpdateOrganization();
+  const updateNotifications = useUpdateNotifications();
+  const updateAppearance = useUpdateAppearance();
 
   // États pour les formulaires
   const [profileForm, setProfileForm] = useState({
@@ -36,113 +50,49 @@ export default function Settings() {
     dateFormat: 'dd/mm/yyyy'
   });
 
-  // Charger les settings au montage
-  React.useEffect(() => {
-    fetchSettings();
-  }, []);
-
-  const fetchSettings = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch('http://localhost:8787/api/settings');
-      const data = await response.json();
-
-      setProfileForm(data.profile);
-      setOrgForm(data.organization);
-      setNotifForm(data.notifications);
-      setAppearanceForm(data.appearance);
-    } catch (error) {
-      console.error('Erreur chargement settings:', error);
-    } finally {
-      setLoading(false);
+  // Synchroniser les formulaires avec les données React Query
+  useEffect(() => {
+    if (settings) {
+      setProfileForm(settings.profile);
+      setOrgForm(settings.organization);
+      setNotifForm(settings.notifications);
+      setAppearanceForm(settings.appearance);
     }
-  };
+  }, [settings]);
 
   const handleSaveProfile = async () => {
     try {
-      setSaving(true);
-      const response = await fetch('http://localhost:8787/api/settings/profile', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(profileForm)
-      });
-
-      if (response.ok) {
-        alert('Profil sauvegardé avec succès !');
-      } else {
-        alert('Erreur lors de la sauvegarde du profil');
-      }
+      await updateProfile.mutateAsync(profileForm);
+      addNotification({ type: 'success', title: '', message: 'Profil sauvegardé avec succès !' });
     } catch (error) {
-      console.error('Erreur:', error);
-      alert('Erreur lors de la sauvegarde du profil');
-    } finally {
-      setSaving(false);
+      addNotification({ type: 'error', title: '', message: 'Erreur lors de la sauvegarde du profil' });
     }
   };
 
   const handleSaveOrganization = async () => {
     try {
-      setSaving(true);
-      const response = await fetch('http://localhost:8787/api/settings/organization', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(orgForm)
-      });
-
-      if (response.ok) {
-        alert('Organisation sauvegardée avec succès !');
-      } else {
-        alert('Erreur lors de la sauvegarde de l\'organisation');
-      }
+      await updateOrganization.mutateAsync(orgForm);
+      addNotification({ type: 'success', title: '', message: 'Organisation sauvegardée avec succès !' });
     } catch (error) {
-      console.error('Erreur:', error);
-      alert('Erreur lors de la sauvegarde de l\'organisation');
-    } finally {
-      setSaving(false);
+      addNotification('Erreur lors de la sauvegarde de l\'organisation', 'error');
     }
   };
 
   const handleSaveNotifications = async () => {
     try {
-      setSaving(true);
-      const response = await fetch('http://localhost:8787/api/settings/notifications', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(notifForm)
-      });
-
-      if (response.ok) {
-        alert('Préférences de notifications sauvegardées avec succès !');
-      } else {
-        alert('Erreur lors de la sauvegarde des notifications');
-      }
+      await updateNotifications.mutateAsync(notifForm);
+      addNotification({ type: 'success', title: '', message: 'Préférences de notifications sauvegardées avec succès !' });
     } catch (error) {
-      console.error('Erreur:', error);
-      alert('Erreur lors de la sauvegarde des notifications');
-    } finally {
-      setSaving(false);
+      addNotification({ type: 'error', title: '', message: 'Erreur lors de la sauvegarde des notifications' });
     }
   };
 
   const handleSaveAppearance = async () => {
     try {
-      setSaving(true);
-      const response = await fetch('http://localhost:8787/api/settings/appearance', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(appearanceForm)
-      });
-
-      if (response.ok) {
-        alert('Préférences d\'apparence sauvegardées avec succès !');
-      } else {
-        alert('Erreur lors de la sauvegarde des préférences d\'apparence');
-      }
+      await updateAppearance.mutateAsync(appearanceForm);
+      addNotification('Préférences d\'apparence sauvegardées avec succès !', 'success');
     } catch (error) {
-      console.error('Erreur:', error);
-      alert('Erreur lors de la sauvegarde des préférences d\'apparence');
-    } finally {
-      setSaving(false);
+      addNotification('Erreur lors de la sauvegarde des préférences d\'apparence', 'error');
     }
   };
 
@@ -153,32 +103,32 @@ export default function Settings() {
     { id: 'appearance' as Tab, label: 'Apparence', icon: Palette }
   ];
 
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-gray-600">Chargement des paramètres...</div>
+      <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="text-gray-600 dark:text-gray-400">Chargement des paramètres...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-8">
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-6">
-          <div className="p-3 bg-gray-100 rounded-lg">
-            <SettingsIcon className="w-8 h-8 text-gray-600" />
+          <div className="p-3 bg-gray-100 dark:bg-gray-800 rounded-lg">
+            <SettingsIcon className="w-8 h-8 text-gray-600 dark:text-gray-400" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Paramètres</h1>
-            <p className="text-gray-600">Gérez vos préférences et paramètres</p>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Paramètres</h1>
+            <p className="text-gray-600 dark:text-gray-400">Gérez vos préférences et paramètres</p>
           </div>
         </div>
       </div>
 
       <div className="flex gap-6">
         {/* Sidebar avec onglets */}
-        <div className="w-64 bg-white rounded-lg border border-gray-200 p-4 h-fit">
+        <div className="w-64 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 h-fit">
           <nav className="space-y-1">
             {tabs.map((tab) => (
               <button
@@ -186,8 +136,8 @@ export default function Settings() {
                 onClick={() => setActiveTab(tab.id)}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                   activeTab === tab.id
-                    ? 'bg-blue-50 text-blue-600 font-medium'
-                    : 'text-gray-700 hover:bg-gray-50'
+                    ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                 }`}
               >
                 <tab.icon className="w-5 h-5" />
@@ -198,38 +148,38 @@ export default function Settings() {
         </div>
 
         {/* Contenu principal */}
-        <div className="flex-1 bg-white rounded-lg border border-gray-200 p-6">
+        <div className="flex-1 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
           {/* Onglet Profil */}
           {activeTab === 'profile' && (
             <div>
-              <h2 className="text-2xl font-bold mb-6">Profil utilisateur</h2>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">Profil utilisateur</h2>
               <div className="space-y-4 max-w-2xl">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Nom complet</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Nom complet</label>
                   <input
                     type="text"
                     value={profileForm.name}
                     onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email</label>
                   <input
                     type="email"
                     value={profileForm.email}
                     onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Rôle</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Rôle</label>
                   <select
                     value={profileForm.role}
                     onChange={(e) => setProfileForm({ ...profileForm, role: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
                   >
                     <option value="Admin">Administrateur</option>
                     <option value="Manager">Manager</option>
@@ -238,9 +188,9 @@ export default function Settings() {
                 </div>
 
                 <div className="pt-4">
-                  <Button onClick={handleSaveProfile} disabled={saving}>
+                  <Button onClick={handleSaveProfile} disabled={updateProfile.isPending}>
                     <Save className="w-4 h-4 mr-2" />
-                    {saving ? 'Sauvegarde...' : 'Sauvegarder'}
+                    {updateProfile.isPending ? 'Sauvegarde...' : 'Sauvegarder'}
                   </Button>
                 </div>
               </div>
@@ -250,52 +200,52 @@ export default function Settings() {
           {/* Onglet Organisation */}
           {activeTab === 'organization' && (
             <div>
-              <h2 className="text-2xl font-bold mb-6">Paramètres de l'organisation</h2>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">Paramètres de l'organisation</h2>
               <div className="space-y-4 max-w-2xl">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Nom de l'organisation</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Nom de l'organisation</label>
                   <input
                     type="text"
                     value={orgForm.name}
                     onChange={(e) => setOrgForm({ ...orgForm, name: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Adresse</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Adresse</label>
                   <input
                     type="text"
                     value={orgForm.address}
                     onChange={(e) => setOrgForm({ ...orgForm, address: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Téléphone</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Téléphone</label>
                   <input
                     type="tel"
                     value={orgForm.phone}
                     onChange={(e) => setOrgForm({ ...orgForm, phone: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Email de contact</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email de contact</label>
                   <input
                     type="email"
                     value={orgForm.email}
                     onChange={(e) => setOrgForm({ ...orgForm, email: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
                   />
                 </div>
 
                 <div className="pt-4">
-                  <Button onClick={handleSaveOrganization} disabled={saving}>
+                  <Button onClick={handleSaveOrganization} disabled={updateOrganization.isPending}>
                     <Save className="w-4 h-4 mr-2" />
-                    {saving ? 'Sauvegarde...' : 'Sauvegarder'}
+                    {updateOrganization.isPending ? 'Sauvegarde...' : 'Sauvegarder'}
                   </Button>
                 </div>
               </div>
@@ -305,12 +255,12 @@ export default function Settings() {
           {/* Onglet Notifications */}
           {activeTab === 'notifications' && (
             <div>
-              <h2 className="text-2xl font-bold mb-6">Préférences de notifications</h2>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">Préférences de notifications</h2>
               <div className="space-y-4 max-w-2xl">
-                <div className="flex items-center justify-between py-3 border-b border-gray-200">
+                <div className="flex items-center justify-between py-3 border-b border-gray-200 dark:border-gray-700">
                   <div>
-                    <p className="font-medium text-gray-900">Notifications par email</p>
-                    <p className="text-sm text-gray-600">Recevoir des emails pour les événements importants</p>
+                    <p className="font-medium text-gray-900 dark:text-gray-100">Notifications par email</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Recevoir des emails pour les événements importants</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
@@ -319,14 +269,14 @@ export default function Settings() {
                       onChange={(e) => setNotifForm({ ...notifForm, emailNotifications: e.target.checked })}
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    <div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 dark:after:border-gray-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                   </label>
                 </div>
 
-                <div className="flex items-center justify-between py-3 border-b border-gray-200">
+                <div className="flex items-center justify-between py-3 border-b border-gray-200 dark:border-gray-700">
                   <div>
-                    <p className="font-medium text-gray-900">Nouvelles commandes</p>
-                    <p className="text-sm text-gray-600">Être notifié des nouvelles commandes</p>
+                    <p className="font-medium text-gray-900 dark:text-gray-100">Nouvelles commandes</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Être notifié des nouvelles commandes</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
@@ -335,14 +285,14 @@ export default function Settings() {
                       onChange={(e) => setNotifForm({ ...notifForm, orderNotifications: e.target.checked })}
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    <div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 dark:after:border-gray-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                   </label>
                 </div>
 
-                <div className="flex items-center justify-between py-3 border-b border-gray-200">
+                <div className="flex items-center justify-between py-3 border-b border-gray-200 dark:border-gray-700">
                   <div>
-                    <p className="font-medium text-gray-900">Alertes d'inventaire</p>
-                    <p className="text-sm text-gray-600">Être notifié des changements d'inventaire</p>
+                    <p className="font-medium text-gray-900 dark:text-gray-100">Alertes d'inventaire</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Être notifié des changements d'inventaire</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
@@ -351,14 +301,14 @@ export default function Settings() {
                       onChange={(e) => setNotifForm({ ...notifForm, inventoryAlerts: e.target.checked })}
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    <div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 dark:after:border-gray-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                   </label>
                 </div>
 
-                <div className="flex items-center justify-between py-3 border-b border-gray-200">
+                <div className="flex items-center justify-between py-3 border-b border-gray-200 dark:border-gray-700">
                   <div>
-                    <p className="font-medium text-gray-900">Stock faible</p>
-                    <p className="text-sm text-gray-600">Alertes quand le stock est bas</p>
+                    <p className="font-medium text-gray-900 dark:text-gray-100">Stock faible</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Alertes quand le stock est bas</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
@@ -367,14 +317,14 @@ export default function Settings() {
                       onChange={(e) => setNotifForm({ ...notifForm, lowStockAlerts: e.target.checked })}
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    <div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 dark:after:border-gray-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                   </label>
                 </div>
 
                 <div className="pt-4">
-                  <Button onClick={handleSaveNotifications} disabled={saving}>
+                  <Button onClick={handleSaveNotifications} disabled={updateNotifications.isPending}>
                     <Save className="w-4 h-4 mr-2" />
-                    {saving ? 'Sauvegarde...' : 'Sauvegarder'}
+                    {updateNotifications.isPending ? 'Sauvegarde...' : 'Sauvegarder'}
                   </Button>
                 </div>
               </div>
@@ -384,14 +334,14 @@ export default function Settings() {
           {/* Onglet Apparence */}
           {activeTab === 'appearance' && (
             <div>
-              <h2 className="text-2xl font-bold mb-6">Préférences d'apparence</h2>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">Préférences d'apparence</h2>
               <div className="space-y-4 max-w-2xl">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Thème</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Thème</label>
                   <select
                     value={appearanceForm.theme}
                     onChange={(e) => setAppearanceForm({ ...appearanceForm, theme: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
                   >
                     <option value="light">Clair</option>
                     <option value="dark">Sombre</option>
@@ -400,11 +350,11 @@ export default function Settings() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Langue</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Langue</label>
                   <select
                     value={appearanceForm.language}
                     onChange={(e) => setAppearanceForm({ ...appearanceForm, language: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
                   >
                     <option value="fr">Français</option>
                     <option value="en">English</option>
@@ -414,11 +364,11 @@ export default function Settings() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Format de date</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Format de date</label>
                   <select
                     value={appearanceForm.dateFormat}
                     onChange={(e) => setAppearanceForm({ ...appearanceForm, dateFormat: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
                   >
                     <option value="dd/mm/yyyy">JJ/MM/AAAA</option>
                     <option value="mm/dd/yyyy">MM/JJ/AAAA</option>
@@ -427,9 +377,9 @@ export default function Settings() {
                 </div>
 
                 <div className="pt-4">
-                  <Button onClick={handleSaveAppearance} disabled={saving}>
+                  <Button onClick={handleSaveAppearance} disabled={updateAppearance.isPending}>
                     <Save className="w-4 h-4 mr-2" />
-                    {saving ? 'Sauvegarde...' : 'Sauvegarder'}
+                    {updateAppearance.isPending ? 'Sauvegarde...' : 'Sauvegarder'}
                   </Button>
                 </div>
               </div>

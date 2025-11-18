@@ -215,7 +215,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // ============================================
   // On enveloppe les enfants avec le Provider
   // et on leur donne accès à toutes les valeurs
-  
+
   return (
     <AuthContext.Provider value={value}>
       {children}

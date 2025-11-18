@@ -1,0 +1,11 @@
+[
+  {
+    "type": "pick",
+    "priority": "high",
+    "productId": 1,
+    "productName": "Test Product",
+    "quantity": 10,
+    "estimatedTimeSeconds": 180,
+    "zone": "A"
+  }
+]

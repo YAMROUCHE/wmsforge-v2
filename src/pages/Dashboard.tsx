@@ -9,6 +9,7 @@ import { suggestionsEngine, Suggestion } from '../utils/suggestionsEngine';
 import { locationOptimizer, LocationOptimization } from '../utils/locationOptimizer';
 import { orderPatternsAnalyzer, OrderPattern, ProductAssociation } from '../utils/orderPatternsAnalyzer';
 import { useNotifications } from '../contexts/NotificationContext';
+import ReviewPrompt from '../components/ReviewPrompt';
 
 interface DashboardStats {
   totalProducts: number;
@@ -132,7 +133,7 @@ export default function Dashboard() {
           });
         });
 
-      // 🎯 Générer les optimisations d'emplacements
+      // Générer les optimisations d'emplacements
       const optimizations = locationOptimizer.optimize({
         movements: movements.movements || [],
         inventory: inventory.items || [],
@@ -220,13 +221,16 @@ export default function Dashboard() {
       <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         {/* Welcome Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Bienvenue, {userName} ! 👋</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Bienvenue, {userName}</h1>
           <p className="mt-2 text-gray-600 dark:text-gray-300">
             Voici un aperçu de votre activité et de vos indicateurs clés.
           </p>
         </div>
 
-        {/* 🤖 AI Panels - Suggestions & Location Optimization */}
+        {/* Review Prompt - Demande d'avis */}
+        <ReviewPrompt />
+
+        {/* AI Panels - Suggestions & Location Optimization */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           <SuggestionsPanel suggestions={suggestions} loading={loading} />
           <LocationOptimizationsPanel optimizations={locationOptimizations} loading={loading} />

@@ -1,3 +1,4 @@
+import { optionalAuthMiddleware, getAuthUser } from '../middleware/auth';
 import { Hono } from 'hono';
 
 const app = new Hono<{
@@ -6,8 +7,12 @@ const app = new Hono<{
   };
 }>();
 
+app.use('/*', optionalAuthMiddleware);
+
 // GET /api/waves - Liste toutes les vagues
 app.get('/', async (c) => {
+  const authUser = c.get("user");
+  const organizationId = authUser?.organizationId || 1;
   try {
     const result = await c.env.DB.prepare(`
       SELECT
@@ -18,7 +23,7 @@ app.get('/', async (c) => {
       WHERE w.organization_id = ?
       GROUP BY w.id
       ORDER BY w.created_at DESC
-    `).bind(1).all();
+    `).bind(organizationId).all();
 
     return c.json({ waves: result.results || [] });
   } catch (error) {
@@ -29,6 +34,8 @@ app.get('/', async (c) => {
 
 // GET /api/waves/:id - Détails d'une vague avec ses commandes
 app.get('/:id', async (c) => {
+  const authUser = c.get("user");
+  const organizationId = authUser?.organizationId || 1;
   try {
     const waveId = c.req.param('id');
 
@@ -36,7 +43,7 @@ app.get('/:id', async (c) => {
     const wave = await c.env.DB.prepare(`
       SELECT * FROM waves
       WHERE id = ? AND organization_id = ?
-    `).bind(waveId, 1).first();
+    `).bind(waveId, organizationId).first();
 
     if (!wave) {
       return c.json({ error: 'Wave not found' }, 404);
@@ -64,6 +71,8 @@ app.get('/:id', async (c) => {
 
 // POST /api/waves - Créer une nouvelle vague
 app.post('/', async (c) => {
+  const authUser = c.get("user");
+  const organizationId = authUser?.organizationId || 1;
   try {
     const body = await c.req.json();
     const { name, priority, zone, orderIds } = body;
@@ -72,7 +81,7 @@ app.post('/', async (c) => {
     const result = await c.env.DB.prepare(`
       INSERT INTO waves (organization_id, name, priority, zone, total_orders, status)
       VALUES (?, ?, ?, ?, ?, 'pending')
-    `).bind(1, name, priority || 'normal', zone || null, orderIds?.length || 0).run();
+    `).bind(organizationId, name, priority || 'normal', zone || null, orderIds?.length || 0).run();
 
     const waveId = result.meta.last_row_id;
 
@@ -95,6 +104,8 @@ app.post('/', async (c) => {
 
 // PUT /api/waves/:id/status - Modifier le statut d'une vague
 app.put('/:id/status', async (c) => {
+  const authUser = c.get("user");
+  const organizationId = authUser?.organizationId || 1;
   try {
     const waveId = c.req.param('id');
     const { status } = await c.req.json();
@@ -115,8 +126,8 @@ app.put('/:id/status', async (c) => {
     `;
 
     const params = additionalFields
-      ? [status, now, waveId, 1]
-      : [status, waveId, 1];
+      ? [status, now, waveId, organizationId]
+      : [status, waveId, organizationId];
 
     await c.env.DB.prepare(query).bind(...params).run();
 

@@ -1,142 +1,215 @@
+/**
+ * Authentication routes - Signup, Login, User management
+ */
+
 import { Hono } from 'hono';
-import { drizzle } from 'drizzle-orm/d1';
-import { eq } from 'drizzle-orm';
-import { users, organizations } from '../../../db/schema';
-import { hashPassword, verifyPassword } from '../utils/password';
-import { createToken, verifyToken } from '../utils/jwt';
+import { cors } from 'hono/cors';
+import { hashPassword, verifyPassword, generateJWT } from '../auth/crypto';
+import { authMiddleware, getAuthUser } from '../middleware/auth';
 
-const auth = new Hono();
+type Bindings = {
+  DB: D1Database;
+  JWT_SECRET?: string;
+};
 
-// POST /auth/register - Créer un compte
-auth.post('/register', async (c) => {
+const app = new Hono<{ Bindings: Bindings }>();
+
+// CORS for frontend
+app.use('/*', cors());
+
+/**
+ * POST /api/auth/signup
+ * Create a new organization with first admin user
+ */
+app.post('/signup', async (c) => {
   try {
     const body = await c.req.json();
-    const { name, email, password, organizationName } = body;
+    const { organizationName, name, email, password } = body;
 
-    if (!name || !email || !password || !organizationName) {
-      return c.json({ error: 'Tous les champs sont requis' }, 400);
+    // Validation
+    if (!organizationName || !name || !email || !password) {
+      return c.json({ error: 'Missing required fields' }, 400);
     }
 
-    const db = drizzle(c.env.DB);
+    if (password.length < 6) {
+      return c.json({ error: 'Password must be at least 6 characters' }, 400);
+    }
 
-    const existingUser = await db.select().from(users).where(eq(users.email, email)).get();
+    // Check if email already exists
+    const existingUser = await c.env.DB.prepare(
+      `SELECT id FROM users WHERE email = ?`
+    ).bind(email).first();
+
     if (existingUser) {
-      return c.json({ error: 'Cet email est déjà utilisé' }, 400);
+      return c.json({ error: 'Email already registered' }, 400);
     }
 
+    // Hash password
     const passwordHash = await hashPassword(password);
 
-    const organization = await db
-      .insert(organizations)
-      .values({ name: organizationName })
-      .returning()
-      .get();
+    // Create organization
+    const orgResult = await c.env.DB.prepare(
+      `INSERT INTO organizations (name, created_at) VALUES (?, datetime('now'))`
+    ).bind(organizationName).run();
 
-    const user = await db
-      .insert(users)
-      .values({
-        organizationId: organization.id,
+    const organizationId = orgResult.meta.last_row_id;
+
+    // Create user (admin)
+    const userResult = await c.env.DB.prepare(
+      `INSERT INTO users (organization_id, email, password_hash, name, role, created_at)
+       VALUES (?, ?, ?, ?, 'admin', datetime('now'))`
+    ).bind(organizationId, email, passwordHash, name).run();
+
+    const userId = userResult.meta.last_row_id;
+
+    // Generate JWT
+    const jwtSecret = c.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production';
+    const token = await generateJWT(
+      {
+        userId,
+        organizationId,
         email,
-        passwordHash,
-        name,
-        role: 'admin',
-        onboardingCompleted: 0,
-      })
-      .returning()
-      .get();
-
-    const token = await createToken(
-      { userId: user.id, organizationId: user.organizationId },
-      c.env.JWT_SECRET
+        role: 'admin'
+      },
+      jwtSecret,
+      86400 * 7 // 7 days
     );
 
     return c.json({
+      success: true,
       token,
       user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        organizationId: user.organizationId,
-        onboardingCompleted: Boolean(user.onboardingCompleted),
-      },
+        id: userId,
+        organizationId,
+        name,
+        email,
+        role: 'admin'
+      }
     }, 201);
   } catch (error) {
-    console.error('Erreur /auth/register:', error);
-    return c.json({ error: 'Erreur serveur' }, 500);
+    console.error('Signup error:', error);
+    return c.json({
+      error: 'Signup failed',
+      details: (error as Error).message
+    }, 500);
   }
 });
 
-// POST /auth/login - Se connecter
-auth.post('/login', async (c) => {
+/**
+ * POST /api/auth/login
+ * Login with email and password
+ */
+app.post('/login', async (c) => {
   try {
     const body = await c.req.json();
     const { email, password } = body;
 
+    // Validation
     if (!email || !password) {
-      return c.json({ error: 'Email et mot de passe requis' }, 400);
+      return c.json({ error: 'Missing email or password' }, 400);
     }
 
-    const db = drizzle(c.env.DB);
-    const user = await db.select().from(users).where(eq(users.email, email)).get();
+    // Find user
+    const user = await c.env.DB.prepare(
+      `SELECT id, organization_id, email, password_hash, name, role
+       FROM users
+       WHERE email = ?`
+    ).bind(email).first() as any;
 
     if (!user) {
-      return c.json({ error: 'Email ou mot de passe incorrect' }, 401);
+      return c.json({ error: 'Invalid email or password' }, 401);
     }
 
-    const isValid = await verifyPassword(password, user.passwordHash);
+    // Verify password
+    const isValid = await verifyPassword(password, user.password_hash);
+
     if (!isValid) {
-      return c.json({ error: 'Email ou mot de passe incorrect' }, 401);
+      return c.json({ error: 'Invalid email or password' }, 401);
     }
 
-    const token = await createToken(
-      { userId: user.id, organizationId: user.organizationId },
-      c.env.JWT_SECRET
+    // Generate JWT
+    const jwtSecret = c.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production';
+    const token = await generateJWT(
+      {
+        userId: user.id,
+        organizationId: user.organization_id,
+        email: user.email,
+        role: user.role
+      },
+      jwtSecret,
+      86400 * 7 // 7 days
     );
 
     return c.json({
+      success: true,
       token,
       user: {
         id: user.id,
+        organizationId: user.organization_id,
         name: user.name,
         email: user.email,
-        organizationId: user.organizationId,
-        onboardingCompleted: Boolean(user.onboardingCompleted),
-      },
-    }, 200);
+        role: user.role
+      }
+    });
   } catch (error) {
-    console.error('Erreur /auth/login:', error);
-    return c.json({ error: 'Erreur serveur' }, 500);
-  }
-});
-
-// GET /auth/me - Vérifier le token et récupérer l'utilisateur
-auth.get('/me', async (c) => {
-  try {
-    const authHeader = c.req.header('Authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return c.json({ error: 'Token manquant' }, 401);
-    }
-    const token = authHeader.substring(7);
-    const payload = await verifyToken(token, c.env.JWT_SECRET);
-    if (!payload) {
-      return c.json({ error: 'Token invalide ou expiré' }, 401);
-    }
-    const db = drizzle(c.env.DB);
-    const user = await db.select().from(users).where(eq(users.id, payload.userId)).get();
-    if (!user) {
-      return c.json({ error: 'Utilisateur non trouvé' }, 404);
-    }
+    console.error('Login error:', error);
     return c.json({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      organizationId: user.organizationId,
-      onboardingCompleted: Boolean(user.onboardingCompleted),
-    }, 200);
-  } catch (error) {
-    console.error('Erreur /auth/me:', error);
-    return c.json({ error: 'Erreur serveur' }, 500);
+      error: 'Login failed',
+      details: (error as Error).message
+    }, 500);
   }
 });
 
-export default auth;
+/**
+ * GET /api/auth/me
+ * Get current authenticated user
+ */
+app.get('/me', authMiddleware, async (c) => {
+  try {
+    const authUser = getAuthUser(c);
+
+    // Get full user details from DB
+    const user = await c.env.DB.prepare(
+      `SELECT id, organization_id, email, name, role, created_at
+       FROM users
+       WHERE id = ?`
+    ).bind(authUser.userId).first() as any;
+
+    if (!user) {
+      return c.json({ error: 'User not found' }, 404);
+    }
+
+    // Get organization details
+    const org = await c.env.DB.prepare(
+      `SELECT id, name, address, phone, email
+       FROM organizations
+       WHERE id = ?`
+    ).bind(user.organization_id).first() as any;
+
+    return c.json({
+      user: {
+        id: user.id,
+        organizationId: user.organization_id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        createdAt: user.created_at
+      },
+      organization: org ? {
+        id: org.id,
+        name: org.name,
+        address: org.address,
+        phone: org.phone,
+        email: org.email
+      } : null
+    });
+  } catch (error) {
+    console.error('Get me error:', error);
+    return c.json({
+      error: 'Failed to get user',
+      details: (error as Error).message
+    }, 500);
+  }
+});
+
+export default app;

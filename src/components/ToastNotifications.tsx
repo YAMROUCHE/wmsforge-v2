@@ -1,14 +1,30 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { CheckCircle, XCircle, AlertTriangle, Info, X } from 'lucide-react';
 import { useNotifications, Notification } from '../contexts/NotificationContext';
 
 export default function ToastNotifications() {
   const { notifications, removeNotification } = useNotifications();
+  const [closingIds, setClosingIds] = useState<Set<string>>(new Set());
 
   // Afficher seulement les 3 dernières notifications non lues
   const recentNotifications = notifications
     .filter(n => !n.read)
     .slice(0, 3);
+
+  const handleClose = (id: string) => {
+    // Ajouter l'animation de sortie
+    setClosingIds(prev => new Set(prev).add(id));
+
+    // Supprimer après l'animation
+    setTimeout(() => {
+      removeNotification(id);
+      setClosingIds(prev => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }, 300);
+  };
 
   const getIcon = (type: Notification['type']) => {
     switch (type) {
@@ -59,15 +75,25 @@ export default function ToastNotifications() {
   if (recentNotifications.length === 0) return null;
 
   return (
-    <div className="fixed top-4 right-4 z-50 space-y-2 max-w-sm">
+    <div className="fixed top-4 right-4 z-50 space-y-2 w-full max-w-sm pointer-events-none">
       {recentNotifications.map((notification) => {
         const Icon = getIcon(notification.type);
         const colors = getColors(notification.type);
+        const isClosing = closingIds.has(notification.id);
 
         return (
           <div
             key={notification.id}
-            className={`${colors.bg} ${colors.border} border rounded-lg p-4 shadow-lg animate-slide-in-right`}
+            className={`
+              ${colors.bg} ${colors.border}
+              border rounded-lg p-4 shadow-lg
+              pointer-events-auto
+              transition-all duration-300 ease-in-out
+              ${isClosing
+                ? 'animate-slide-out-right opacity-0 scale-95'
+                : 'animate-slide-in-right opacity-100 scale-100'
+              }
+            `}
           >
             <div className="flex items-start gap-3">
               <Icon className={`w-5 h-5 ${colors.icon} flex-shrink-0 mt-0.5`} />
@@ -84,7 +110,7 @@ export default function ToastNotifications() {
                   <button
                     onClick={() => {
                       notification.action!.onClick();
-                      removeNotification(notification.id);
+                      handleClose(notification.id);
                     }}
                     className={`mt-2 text-sm font-medium ${colors.icon} hover:underline`}
                   >
@@ -94,8 +120,9 @@ export default function ToastNotifications() {
               </div>
 
               <button
-                onClick={() => removeNotification(notification.id)}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                onClick={() => handleClose(notification.id)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors flex-shrink-0"
+                aria-label="Fermer la notification"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -107,7 +134,7 @@ export default function ToastNotifications() {
       <style>{`
         @keyframes slide-in-right {
           from {
-            transform: translateX(100%);
+            transform: translateX(120%);
             opacity: 0;
           }
           to {
@@ -115,8 +142,24 @@ export default function ToastNotifications() {
             opacity: 1;
           }
         }
+
+        @keyframes slide-out-right {
+          from {
+            transform: translateX(0);
+            opacity: 1;
+          }
+          to {
+            transform: translateX(120%);
+            opacity: 0;
+          }
+        }
+
         .animate-slide-in-right {
-          animation: slide-in-right 0.3s ease-out;
+          animation: slide-in-right 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .animate-slide-out-right {
+          animation: slide-out-right 0.3s cubic-bezier(0.4, 0, 1, 1);
         }
       `}</style>
     </div>

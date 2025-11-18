@@ -374,6 +374,7 @@ wmsforge-db: 4f114494-537e-4c31-8271-79f3ee49dfed
 2. **Export PDF** : Placeholder (à implémenter en v2.4)
 3. **Invalid Date** : Dans historique mouvements (non bloquant)
 4. **Wrangler version** : 3.114.15 (v4 disponible, pas urgent)
+5. **Landing Page - Mockups** : 2 encarts ajoutés (interactif + sidebar élargie), à vérifier visuellement
 
 ### 🔧 Optimisations futures (non bloquantes)
 1. Implémenter authentification JWT réelle

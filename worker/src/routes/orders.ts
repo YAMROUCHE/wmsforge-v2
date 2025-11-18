@@ -1,3 +1,4 @@
+import { optionalAuthMiddleware, getAuthUser } from '../middleware/auth';
 import { Hono } from 'hono';
 
 const app = new Hono<{
@@ -6,8 +7,12 @@ const app = new Hono<{
   };
 }>();
 
+app.use('/*', optionalAuthMiddleware);
+
 // GET /api/orders - Liste toutes les commandes
 app.get('/', async (c) => {
+  const authUser = c.get("user");
+  const organizationId = authUser?.organizationId || 1;
   try {
     const result = await c.env.DB.prepare(`
       SELECT
@@ -18,7 +23,7 @@ app.get('/', async (c) => {
       WHERE o.organization_id = ?
       GROUP BY o.id
       ORDER BY o.created_at DESC
-    `).bind(1).all();
+    `).bind(organizationId).all();
 
     return c.json({ orders: result.results || [] });
   } catch (error) {
@@ -29,6 +34,8 @@ app.get('/', async (c) => {
 
 // GET /api/orders/stats - Statistiques des commandes
 app.get('/stats', async (c) => {
+  const authUser = c.get("user");
+  const organizationId = authUser?.organizationId || 1;
   try {
     const stats = await c.env.DB.prepare(`
       SELECT
@@ -40,7 +47,7 @@ app.get('/stats', async (c) => {
         SUM(total_amount) as total_revenue
       FROM orders
       WHERE organization_id = ?
-    `).bind(1).first();
+    `).bind(organizationId).first();
 
     return c.json({ stats: stats || {} });
   } catch (error) {
@@ -51,6 +58,8 @@ app.get('/stats', async (c) => {
 
 // GET /api/orders/:id - Détails d'une commande avec ses items
 app.get('/:id', async (c) => {
+  const authUser = c.get("user");
+  const organizationId = authUser?.organizationId || 1;
   try {
     const orderId = c.req.param('id');
 
@@ -59,7 +68,7 @@ app.get('/:id', async (c) => {
       SELECT *
       FROM orders
       WHERE id = ? AND organization_id = ?
-    `).bind(orderId, 1).first();
+    `).bind(orderId, organizationId).first();
 
     if (!order) {
       return c.json({ error: 'Order not found' }, 404);
@@ -87,6 +96,8 @@ app.get('/:id', async (c) => {
 
 // POST /api/orders - Créer une nouvelle commande
 app.post('/', async (c) => {
+  const authUser = c.get("user");
+  const organizationId = authUser?.organizationId || 1;
   try {
     const body = await c.req.json();
     const { type, customerName, customerEmail, items } = body;
@@ -116,7 +127,7 @@ app.post('/', async (c) => {
       )
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
-      1,
+      organizationId,
       orderNumber,
       type,
       customerName || null,
@@ -151,6 +162,8 @@ app.post('/', async (c) => {
 
 // PUT /api/orders/:id/status - Changer le statut d'une commande
 app.put('/:id/status', async (c) => {
+  const authUser = c.get("user");
+  const organizationId = authUser?.organizationId || 1;
   try {
     const orderId = c.req.param('id');
     const { status } = await c.req.json();
@@ -165,7 +178,7 @@ app.put('/:id/status', async (c) => {
       UPDATE orders
       SET status = ?
       WHERE id = ? AND organization_id = ?
-    `).bind(status, orderId, 1).run();
+    `).bind(status, orderId, organizationId).run();
 
     return c.json({ message: 'Status updated successfully', status });
   } catch (error) {
@@ -176,6 +189,8 @@ app.put('/:id/status', async (c) => {
 
 // POST /api/orders/:id/items - Ajouter des items à une commande
 app.post('/:id/items', async (c) => {
+  const authUser = c.get("user");
+  const organizationId = authUser?.organizationId || 1;
   try {
     const orderId = c.req.param('id');
     const { productId, quantity, unitPrice } = await c.req.json();
@@ -204,6 +219,8 @@ app.post('/:id/items', async (c) => {
 
 // DELETE /api/orders/:id - Supprimer une commande
 app.delete('/:id', async (c) => {
+  const authUser = c.get("user");
+  const organizationId = authUser?.organizationId || 1;
   try {
     const orderId = c.req.param('id');
 
@@ -215,7 +232,7 @@ app.delete('/:id', async (c) => {
     // Supprimer la commande
     await c.env.DB.prepare(`
       DELETE FROM orders WHERE id = ? AND organization_id = ?
-    `).bind(orderId, 1).run();
+    `).bind(orderId, organizationId).run();
 
     return c.json({ message: 'Order deleted successfully' });
   } catch (error) {

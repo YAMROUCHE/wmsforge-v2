@@ -13,7 +13,11 @@ import {
   Sun,
   Moon,
   Bell,
-  FlaskConical
+  FlaskConical,
+  Waves,
+  ListChecks,
+  Trophy,
+  Plug
 } from 'lucide-react';
 import { useSidebar } from '../../contexts/SidebarContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -32,7 +36,11 @@ export default function Sidebar() {
     { path: '/inventory', icon: Boxes, label: 'Inventaire' },
     { path: '/orders', icon: ShoppingCart, label: 'Commandes' },
     { path: '/locations', icon: MapPin, label: 'Emplacements' },
+    { path: '/waves', icon: Waves, label: 'Vagues' },
+    { path: '/tasks', icon: ListChecks, label: 'Tâches' },
+    { path: '/labor', icon: Trophy, label: 'Performance' },
     { path: '/reports', icon: BarChart3, label: 'Rapports' },
+    { path: '/integrations', icon: Plug, label: 'Intégrations' },
     { path: '/enterprise-test', icon: FlaskConical, label: 'Tests Enterprise' },
     { path: '/settings', icon: Settings, label: 'Paramètres' }
   ];

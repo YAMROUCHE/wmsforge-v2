@@ -1,9 +1,14 @@
+import { optionalAuthMiddleware, getAuthUser } from '../middleware/auth';
 import { Hono } from 'hono';
 
 const app = new Hono<{ Bindings: { DB: D1Database } }>();
 
+app.use('/*', optionalAuthMiddleware);
+
 // GET /api/tasks - Liste toutes les tâches
 app.get('/', async (c) => {
+    const authUser = c.get("user");
+    const organizationId = authUser?.organizationId || 1;
   try {
     const { status, operatorId } = c.req.query();
 
@@ -35,6 +40,8 @@ app.get('/', async (c) => {
 
 // POST /api/tasks - Créer des tâches
 app.post('/', async (c) => {
+    const authUser = c.get("user");
+    const organizationId = authUser?.organizationId || 1;
   try {
     const tasks = await c.req.json();
     const createdTasks = [];
@@ -47,10 +54,10 @@ app.post('/', async (c) => {
           estimated_time_seconds, zone
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
-        1, task.waveId, task.orderId, task.type, task.priority || 'normal',
+        1, task.waveId || null, task.orderId || null, task.type, task.priority || 'normal',
         'pending', task.productId, task.productName, task.quantity,
-        task.fromLocationId, task.toLocationId, task.estimatedTimeSeconds || 0,
-        task.zone
+        task.fromLocationId || null, task.toLocationId || null, task.estimatedTimeSeconds || 0,
+        task.zone || null
       ).run();
 
       createdTasks.push({ id: result.meta.last_row_id });
@@ -58,12 +65,18 @@ app.post('/', async (c) => {
 
     return c.json({ success: true, tasks: createdTasks }, 201);
   } catch (error) {
-    return c.json({ error: 'Failed to create tasks' }, 500);
+    console.error('Error creating tasks:', error);
+    return c.json({
+      error: 'Failed to create tasks',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, 500);
   }
 });
 
 // PUT /api/tasks/:id/status - Mettre à jour le statut d'une tâche
 app.put('/:id/status', async (c) => {
+    const authUser = c.get("user");
+    const organizationId = authUser?.organizationId || 1;
   try {
     const taskId = c.req.param('id');
     const { status, actualTimeSeconds } = await c.req.json();
@@ -92,6 +105,8 @@ app.put('/:id/status', async (c) => {
 
 // GET /api/tasks/metrics - Métriques des tâches
 app.get('/metrics', async (c) => {
+    const authUser = c.get("user");
+    const organizationId = authUser?.organizationId || 1;
   try {
     const stats = await c.env.DB.prepare(`
       SELECT
@@ -102,7 +117,7 @@ app.get('/metrics', async (c) => {
         AVG(CASE WHEN actual_time_seconds > 0 THEN actual_time_seconds ELSE NULL END) as avg_time
       FROM tasks
       WHERE organization_id = ?
-    `).bind(1).first();
+    `).bind(organizationId).first();
 
     return c.json({ metrics: stats || {} });
   } catch (error) {
