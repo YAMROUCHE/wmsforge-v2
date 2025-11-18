@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Package, ArrowRight, BarChart3, ShoppingCart, Box, MapPin, Settings, Layers, Clipboard, Users, FileText, Zap } from 'lucide-react';
+import { Package, ArrowRight, BarChart3, ShoppingCart, Box, MapPin, Settings, Layers, Clipboard, Users, FileText, Zap, Bell } from 'lucide-react';
 
 export default function Landing() {
   const [activeDemo, setActiveDemo] = useState('dashboard');
@@ -1078,6 +1078,84 @@ export default function Landing() {
                 Prenez des décisions éclairées avec des analytics
                 et des tableaux de bord en temps réel.
               </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Advanced Features Section */}
+      <section className="py-20 px-6 bg-white">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-12 space-y-3">
+            <h2 className="text-3xl font-medium text-gray-900">
+              Fonctionnalités puissantes, interface simple
+            </h2>
+            <p className="text-gray-600 max-w-2xl mx-auto">
+              Des outils professionnels pensés pour gagner du temps au quotidien.
+              Sans formation complexe, sans manuel de 200 pages.
+            </p>
+          </div>
+
+          {/* Grid des fonctionnalités */}
+          <div className="grid md:grid-cols-2 gap-8">
+            <div className="flex gap-4 p-6 bg-gray-50 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors">
+              <div className="flex-shrink-0">
+                <div className="w-12 h-12 bg-gray-900 rounded-lg flex items-center justify-center">
+                  <Zap className="h-6 w-6 text-white" />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-lg font-medium text-gray-900">Wave Picking</h3>
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  Groupez jusqu'à 50 commandes en une seule vague. Réduisez vos déplacements de 60%.
+                  Un préparateur peut traiter 3x plus de commandes par heure.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-4 p-6 bg-gray-50 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors">
+              <div className="flex-shrink-0">
+                <div className="w-12 h-12 bg-gray-900 rounded-lg flex items-center justify-center">
+                  <MapPin className="h-6 w-6 text-white" />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-lg font-medium text-gray-900">Multi-emplacements intelligents</h3>
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  Organisez votre entrepôt avec une précision à l'étagère. Trouvez n'importe quel
+                  produit en 10 secondes. Zones, allées, racks, étagères.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-4 p-6 bg-gray-50 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors">
+              <div className="flex-shrink-0">
+                <div className="w-12 h-12 bg-gray-900 rounded-lg flex items-center justify-center">
+                  <Bell className="h-6 w-6 text-white" />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-lg font-medium text-gray-900">Alertes automatiques</h3>
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  Ne tombez plus jamais en rupture. Alertes automatiques quand vos stocks
+                  atteignent le seuil critique. Par email ou dans l'app.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-4 p-6 bg-gray-50 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors">
+              <div className="flex-shrink-0">
+                <div className="w-12 h-12 bg-gray-900 rounded-lg flex items-center justify-center">
+                  <FileText className="h-6 w-6 text-white" />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-lg font-medium text-gray-900">Export & API</h3>
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  Exportez toutes vos données en un clic. Compatible avec Excel, Google Sheets,
+                  votre ERP. API REST pour les développeurs.
+                </p>
+              </div>
             </div>
           </div>
         </div>
