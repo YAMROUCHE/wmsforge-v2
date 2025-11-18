@@ -3,7 +3,7 @@ import type { ComponentType } from '../../lib/warehouse';
 
 interface DraggablePaletteItemProps {
   type: ComponentType;
-  icon: React.ComponentType<{ className?: string; size?: number }>;
+  icon: any;
   label: string;
   description: string;
   color: string;

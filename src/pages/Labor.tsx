@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { Trophy } from 'lucide-react';
 import LaborManagementPanel from '../components/LaborManagementPanel';
 import { useLeaderboard, usePerformance, useTeamStats } from '../hooks/useLabor';
@@ -28,11 +28,18 @@ export default function Labor() {
   const transformedPerformances = performances.map((perf) => ({
     operator_id: perf.operator_id.toString(),
     operator_name: perf.operator_name || 'Unknown',
-    daily_score: perf.daily_score,
+    date: perf.date,
+    tasks_completed: perf.tasks_completed,
     picks_per_hour: perf.picks_per_hour,
+    lines_per_hour: perf.lines_per_hour,
     accuracy_rate: perf.accuracy_rate,
+    total_hours_worked: perf.total_hours_worked,
+    avg_task_time_seconds: perf.avg_task_time_seconds,
     efficiency_score: perf.efficiency_score,
+    daily_score: perf.daily_score,
     badges_earned: [], // Will be populated when we fetch badges
+    rank: perf.rank,
+    streak_days: perf.streak_days,
     goals: [], // Will be populated based on performance
   }));
 

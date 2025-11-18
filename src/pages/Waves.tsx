@@ -1,4 +1,3 @@
-import React from 'react';
 import { Waves as WavesIcon, Plus } from 'lucide-react';
 import WaveManagementPanel from '../components/WaveManagementPanel';
 import { useWaves, useUpdateWaveStatus } from '../hooks/useWaves';
@@ -19,12 +18,14 @@ export default function Waves() {
         onSuccess: () => {
           addNotification({
             type: 'success',
+            title: 'Vague libérée',
             message: 'Vague libérée avec succès',
           });
         },
         onError: () => {
           addNotification({
             type: 'error',
+            title: 'Erreur',
             message: 'Erreur lors de la libération de la vague',
           });
         },
@@ -39,12 +40,14 @@ export default function Waves() {
         onSuccess: () => {
           addNotification({
             type: 'success',
+            title: 'Vague démarrée',
             message: 'Vague démarrée avec succès',
           });
         },
         onError: () => {
           addNotification({
             type: 'error',
+            title: 'Erreur',
             message: 'Erreur lors du démarrage de la vague',
           });
         },
@@ -59,12 +62,14 @@ export default function Waves() {
         onSuccess: () => {
           addNotification({
             type: 'success',
+            title: 'Vague terminée',
             message: 'Vague terminée avec succès',
           });
         },
         onError: () => {
           addNotification({
             type: 'error',
+            title: 'Erreur',
             message: 'Erreur lors de la finalisation de la vague',
           });
         },
@@ -79,12 +84,14 @@ export default function Waves() {
         onSuccess: () => {
           addNotification({
             type: 'info',
+            title: 'Vague annulée',
             message: 'Vague annulée',
           });
         },
         onError: () => {
           addNotification({
             type: 'error',
+            title: 'Erreur',
             message: 'Erreur lors de l\'annulation de la vague',
           });
         },
@@ -98,16 +105,17 @@ export default function Waves() {
     name: wave.name,
     status: wave.status as any,
     priority: wave.priority as any,
-    zone: wave.zone,
-    assigned_to: wave.assigned_to,
+    zone: wave.zone || undefined,
     orders: wave.orders || [],
     metrics: {
       total_orders: wave.total_orders,
       total_lines: wave.total_lines,
       total_units: wave.total_units,
+      estimated_picks: wave.total_lines || 0,
       estimated_time_minutes: wave.estimated_time_minutes,
+      zones_involved: wave.zone ? [wave.zone] : [],
     },
-    created_at: wave.created_at ? new Date(wave.created_at) : undefined,
+    created_at: wave.created_at ? new Date(wave.created_at) : new Date(),
     released_at: wave.released_at ? new Date(wave.released_at) : undefined,
     completed_at: wave.completed_at ? new Date(wave.completed_at) : undefined,
   }));
@@ -135,6 +143,7 @@ export default function Waves() {
             onClick={() => {
               addNotification({
                 type: 'info',
+                title: 'En développement',
                 message: 'Fonctionnalité de création de vagues en développement',
               });
             }}

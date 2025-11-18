@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ShoppingCart, Plus, Package, TrendingUp, Clock, CheckCircle, Truck, XCircle } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import ExportButton from '../components/ExportButton';
@@ -55,7 +55,7 @@ export default function Orders() {
   });
 
   // Charger les produits au montage
-  React.useEffect(() => {
+  useEffect(() => {
     fetchProducts();
   }, []);
 
@@ -88,6 +88,7 @@ export default function Orders() {
 
       addNotification({
         type: 'success',
+        title: 'Succès',
         message: 'Commande créée avec succès'
       });
 
@@ -96,6 +97,7 @@ export default function Orders() {
     } catch (error) {
       addNotification({
         type: 'error',
+        title: 'Erreur',
         message: 'Erreur lors de la création de la commande'
       });
     }
@@ -105,6 +107,7 @@ export default function Orders() {
     if (!itemForm.productId || !itemForm.quantity || !itemForm.unitPrice) {
       addNotification({
         type: 'error',
+        title: 'Erreur',
         message: 'Veuillez remplir tous les champs'
       });
       return;
@@ -141,12 +144,14 @@ export default function Orders() {
           onSuccess: () => {
             addNotification({
               type: 'success',
+              title: 'Succès',
               message: 'Statut mis à jour'
             });
           },
           onError: () => {
             addNotification({
               type: 'error',
+              title: 'Erreur',
               message: 'Erreur lors de la mise à jour du statut'
             });
           }
@@ -165,12 +170,14 @@ export default function Orders() {
         onSuccess: () => {
           addNotification({
             type: 'success',
+            title: 'Succès',
             message: 'Commande supprimée'
           });
         },
         onError: () => {
           addNotification({
             type: 'error',
+            title: 'Erreur',
             message: 'Erreur lors de la suppression'
           });
         }
@@ -445,7 +452,7 @@ export default function Orders() {
                     className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                   />
                 </div>
-                <Button onClick={handleAddItem} variant="secondary" size="sm">
+                <Button onClick={handleAddItem} variant="secondary">
                   <Plus className="w-4 h-4 mr-1" />
                   Ajouter
                 </Button>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Star, X, ExternalLink, MessageSquare } from 'lucide-react';
 import { Button } from './ui/Button';
 import { fetchAPI } from '../lib/api';
@@ -22,7 +22,7 @@ export default function ReviewPrompt({ onDismiss }: ReviewPromptProps) {
 
   const checkIfShouldShow = async () => {
     try {
-      const response = await fetchAPI('/api/testimonials/prompt/should-show');
+      const response = await fetchAPI('/api/testimonials/prompt/should-show') as any;
       if (response.shouldShow) {
         setShouldShow(true);
         // Track that prompt was shown

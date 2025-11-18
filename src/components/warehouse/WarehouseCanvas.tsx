@@ -2,7 +2,7 @@ import { useDroppable } from '@dnd-kit/core';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import DraggableComponent from './DraggableComponent';
 import type { WarehouseComponent, ComponentType } from '../../lib/warehouse';
-import { GRID_SIZE, snapToGrid, canBeChildOf } from '../../lib/warehouse';
+import { GRID_SIZE, snapToGrid } from '../../lib/warehouse';
 
 interface WarehouseCanvasProps {
   components: WarehouseComponent[];
@@ -50,15 +50,13 @@ export default function WarehouseCanvas({
   };
 
   // Vérifier quels composants peuvent recevoir le composant en cours de drag
-  const getDropZones = () => {
-    if (!draggedComponent) return [];
-    
-    return components.filter(comp => 
-      canBeChildOf(draggedComponent.type, comp.type)
-    );
-  };
+  // const _getDropZones = () => {
+  //   if (!draggedComponent) return [];
+  //   return components.filter(comp =>
+  //     canBeChildOf(draggedComponent.type, comp.type)
+  //   );
+  // };
 
-  const dropZones = getDropZones();
 
   return (
     <div className="flex-1 relative overflow-hidden bg-gray-50">

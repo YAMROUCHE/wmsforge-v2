@@ -1,9 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { MapPin, Plus, Layers, Box, Grid3x3, Maximize, Edit, Trash2, Filter, Search } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { useLocations, useLocationStats, useCreateLocation, useUpdateLocation, useDeleteLocation } from '../hooks/useLocations';
 import { useNotifications } from '../contexts/NotificationContext';
-import { Location as LocationType, CreateLocationRequest } from '../services/api';
+import { Location as LocationType } from '../services/api';
 
 export default function Locations() {
   const { addNotification } = useNotifications();
@@ -62,6 +62,7 @@ export default function Locations() {
     if (!locationForm.code || !locationForm.name) {
       addNotification({
         type: 'error',
+        title: 'Erreur',
         message: 'Veuillez remplir tous les champs obligatoires'
       });
       return;
@@ -79,6 +80,7 @@ export default function Locations() {
           onSuccess: () => {
             addNotification({
               type: 'success',
+              title: 'Succès',
               message: 'Emplacement créé avec succès'
             });
             setShowCreateModal(false);
@@ -87,6 +89,7 @@ export default function Locations() {
           onError: () => {
             addNotification({
               type: 'error',
+              title: 'Erreur',
               message: 'Erreur lors de la création de l\'emplacement'
             });
           }
@@ -101,6 +104,7 @@ export default function Locations() {
     if (!selectedLocation || !locationForm.code || !locationForm.name) {
       addNotification({
         type: 'error',
+        title: 'Erreur',
         message: 'Veuillez remplir tous les champs obligatoires'
       });
       return;
@@ -121,6 +125,7 @@ export default function Locations() {
           onSuccess: () => {
             addNotification({
               type: 'success',
+              title: 'Succès',
               message: 'Emplacement modifié avec succès'
             });
             setShowEditModal(false);
@@ -130,6 +135,7 @@ export default function Locations() {
           onError: () => {
             addNotification({
               type: 'error',
+              title: 'Erreur',
               message: 'Erreur lors de la modification'
             });
           }
@@ -148,12 +154,14 @@ export default function Locations() {
         onSuccess: () => {
           addNotification({
             type: 'success',
+            title: 'Succès',
             message: 'Emplacement supprimé'
           });
         },
         onError: () => {
           addNotification({
             type: 'error',
+            title: 'Erreur',
             message: 'Erreur lors de la suppression'
           });
         }

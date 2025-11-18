@@ -250,12 +250,12 @@ export interface AdjustStockData {
 
 export async function getInventory(): Promise<InventoryItem[]> {
   const response = await fetchAPI('/api/inventory');
-  return response;
+  return response as InventoryItem[];
 }
 
 export async function getInventoryByProduct(productId: number): Promise<InventoryDetail[]> {
   const response = await fetchAPI(`/api/inventory/${productId}`);
-  return response;
+  return response as InventoryDetail[];
 }
 
 export async function adjustStock(data: AdjustStockData): Promise<{ message: string; newQuantity: number }> {
@@ -263,10 +263,10 @@ export async function adjustStock(data: AdjustStockData): Promise<{ message: str
     method: 'POST',
     body: JSON.stringify(data),
   });
-  return response;
+  return response as { message: string; newQuantity: number };
 }
 
 export async function getStockMovements(): Promise<StockMovement[]> {
   const response = await fetchAPI('/api/inventory/movements/list');
-  return response;
+  return response as StockMovement[];
 }

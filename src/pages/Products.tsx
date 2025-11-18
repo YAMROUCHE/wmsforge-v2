@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, Search, Upload, Edit, Trash2, Package, Filter, Download } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Plus, Search, Upload, Edit, Trash2, Package, Filter } from 'lucide-react';
 import { Button } from '../components/ui/Button';
-import { Input } from '../components/ui/Input';
 import ExportButton from '../components/ExportButton';
 
 interface Product {
@@ -30,7 +29,19 @@ export default function Products() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   
   // Formulaire nouveau produit
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    sku: string;
+    name: string;
+    description: string;
+    category: string;
+    price: string;
+    cost: string;
+    minStock: string;
+    maxStock: string;
+    abcClass: 'A' | 'B' | 'C';
+    weight: string;
+    status: 'active' | 'inactive' | 'discontinued';
+  }>({
     sku: '',
     name: '',
     description: '',
@@ -39,9 +50,9 @@ export default function Products() {
     cost: '',
     minStock: '0',
     maxStock: '',
-    abcClass: 'C' as 'A' | 'B' | 'C',
+    abcClass: 'C',
     weight: '',
-    status: 'active' as const
+    status: 'active'
   });
 
   // Charger les produits au démarrage

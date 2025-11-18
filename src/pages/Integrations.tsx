@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Plug, Plus, RefreshCw, Trash2, Check, X, Clock, ShoppingBag, Cloud, Package } from 'lucide-react';
 import { useIntegrations, useSetupShopify, useSetupWooCommerce, useSetupSalesforce, useTriggerSync, useDeleteIntegration } from '../hooks/useIntegrations';
 import { useNotifications } from '../contexts/NotificationContext';
@@ -42,7 +42,7 @@ const AVAILABLE_INTEGRATIONS: AvailableIntegration[] = [
 
 export default function Integrations() {
   const { addNotification } = useNotifications();
-  const { data, isLoading } = useIntegrations();
+  const { data } = useIntegrations();
   const setupShopify = useSetupShopify();
   const setupWooCommerce = useSetupWooCommerce();
   const setupSalesforce = useSetupSalesforce();
@@ -229,7 +229,6 @@ export default function Integrations() {
                   <div className="flex items-center gap-2">
                     <Button
                       variant="secondary"
-                      size="sm"
                       onClick={() => handleSync(integration.id)}
                       disabled={triggerSync.isPending}
                     >
@@ -238,7 +237,6 @@ export default function Integrations() {
                     </Button>
                     <Button
                       variant="secondary"
-                      size="sm"
                       onClick={() => handleDelete(integration.id)}
                       disabled={deleteIntegration.isPending}
                     >
@@ -284,14 +282,13 @@ export default function Integrations() {
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">{integration.description}</p>
 
                 {isConnected ? (
-                  <Button variant="secondary" size="sm" disabled className="w-full">
+                  <Button variant="secondary" disabled className="w-full">
                     <Check className="w-4 h-4 mr-1" />
                     Connecté
                   </Button>
                 ) : integration.id === 'shopify' ? (
                   <Button
                     variant="primary"
-                    size="sm"
                     onClick={() => setShowShopifySetup(true)}
                     className="w-full"
                   >
@@ -301,7 +298,6 @@ export default function Integrations() {
                 ) : integration.id === 'woocommerce' ? (
                   <Button
                     variant="primary"
-                    size="sm"
                     onClick={() => setShowWooSetup(true)}
                     className="w-full"
                   >
@@ -311,7 +307,6 @@ export default function Integrations() {
                 ) : integration.id === 'salesforce' ? (
                   <Button
                     variant="primary"
-                    size="sm"
                     onClick={() => setShowSalesforceSetup(true)}
                     className="w-full"
                   >
@@ -319,7 +314,7 @@ export default function Integrations() {
                     Connecter
                   </Button>
                 ) : (
-                  <Button variant="secondary" size="sm" disabled className="w-full">
+                  <Button variant="secondary" disabled className="w-full">
                     Bientôt disponible
                   </Button>
                 )}

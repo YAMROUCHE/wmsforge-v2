@@ -28,17 +28,17 @@ export function convertToCSV<T extends Record<string, any>>(
 
         // Gestion des valeurs nulles/undefined
         if (value === null || value === undefined) {
-          value = '';
+          value = '' as any;
         }
 
         // Gestion des dates
-        if (value instanceof Date) {
-          value = value.toISOString();
+        if (value && typeof value === 'object' && value.constructor && value.constructor.name === 'Date') {
+          value = (value as Date).toISOString() as any;
         }
 
         // Gestion des objets
         if (typeof value === 'object') {
-          value = JSON.stringify(value);
+          value = JSON.stringify(value) as any;
         }
 
         // Échapper les virgules et guillemets

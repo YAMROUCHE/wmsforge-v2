@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Play, CheckCircle, XCircle, Loader } from 'lucide-react';
 import WaveManagementPanel from '../components/WaveManagementPanel';
 import TaskManagementPanel from '../components/TaskManagementPanel';
 import LaborManagementPanel from '../components/LaborManagementPanel';
-import { waveEngine, WaveConfig, Wave, Order } from '../utils/waveEngine';
+import { waveEngine, Wave, Order } from '../utils/waveEngine';
 import { taskEngine, Task, Operator, TaskMetrics } from '../utils/taskEngine';
 import { laborEngine, OperatorPerformance, LeaderboardEntry } from '../utils/laborEngine';
 
@@ -71,16 +71,7 @@ export default function EnterpriseTest() {
 
       log(`📦 ${testOrders.length} commandes générées`);
 
-      const waveConfig: WaveConfig = {
-        max_orders_per_wave: 10,
-        max_lines_per_wave: 30,
-        max_time_per_wave_minutes: 120,
-        group_by_priority: true,
-        group_by_zone: true,
-        group_by_shipping: true,
-      };
-
-      const generatedWaves = waveEngine.generateWaves(testOrders, waveConfig);
+      const generatedWaves = waveEngine.generateWaves(testOrders);
       setWaves(generatedWaves);
 
       log(`✅ ${generatedWaves.length} vagues générées`);
@@ -89,7 +80,7 @@ export default function EnterpriseTest() {
       });
 
       const test1Passed = generatedWaves.length > 0 &&
-        generatedWaves.every(w => w.metrics.total_orders <= waveConfig.max_orders_per_wave);
+        generatedWaves.every(w => w.metrics.total_orders <= 20);
 
       setTestResults(prev => ({ ...prev, wave: test1Passed }));
       log(test1Passed ? '✅ TEST 1 RÉUSSI' : '❌ TEST 1 ÉCHOUÉ');

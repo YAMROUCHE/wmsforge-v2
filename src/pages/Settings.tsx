@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Settings as SettingsIcon, User, Building, Bell, Palette, Save } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import {
@@ -72,27 +72,27 @@ export default function Settings() {
   const handleSaveOrganization = async () => {
     try {
       await updateOrganization.mutateAsync(orgForm);
-      addNotification({ type: 'success', title: '', message: 'Organisation sauvegardée avec succès !' });
+      addNotification({ type: 'success', title: 'Succès', message: 'Organisation sauvegardée avec succès !' });
     } catch (error) {
-      addNotification('Erreur lors de la sauvegarde de l\'organisation', 'error');
+      addNotification({ type: 'error', title: 'Erreur', message: 'Erreur lors de la sauvegarde de l\'organisation' });
     }
   };
 
   const handleSaveNotifications = async () => {
     try {
       await updateNotifications.mutateAsync(notifForm);
-      addNotification({ type: 'success', title: '', message: 'Préférences de notifications sauvegardées avec succès !' });
+      addNotification({ type: 'success', title: 'Succès', message: 'Préférences de notifications sauvegardées avec succès !' });
     } catch (error) {
-      addNotification({ type: 'error', title: '', message: 'Erreur lors de la sauvegarde des notifications' });
+      addNotification({ type: 'error', title: 'Erreur', message: 'Erreur lors de la sauvegarde des notifications' });
     }
   };
 
   const handleSaveAppearance = async () => {
     try {
       await updateAppearance.mutateAsync(appearanceForm);
-      addNotification('Préférences d\'apparence sauvegardées avec succès !', 'success');
+      addNotification({ type: 'success', title: 'Succès', message: 'Préférences d\'apparence sauvegardées avec succès !' });
     } catch (error) {
-      addNotification('Erreur lors de la sauvegarde des préférences d\'apparence', 'error');
+      addNotification({ type: 'error', title: 'Erreur', message: 'Erreur lors de la sauvegarde des préférences d\'apparence' });
     }
   };
 

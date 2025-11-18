@@ -1,5 +1,4 @@
 import { useQuery } from '@tanstack/react-query';
-import { orderApi } from '../services/api';
 
 // Hook pour obtenir toutes les statistiques analytics
 export function useAnalytics() {

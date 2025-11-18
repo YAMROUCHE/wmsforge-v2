@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
-  Trophy, TrendingUp, TrendingDown, Minus, Star, Target, Award,
-  Zap, Clock, CheckCircle, Activity, Users
+  Trophy, TrendingUp, TrendingDown, Minus, Star, Award,
+  Activity, Users
 } from 'lucide-react';
-import { OperatorPerformance, LeaderboardEntry, Badge, DailyGoal } from '../utils/laborEngine';
+import { OperatorPerformance, LeaderboardEntry, Badge } from '../utils/laborEngine';
 
 interface LaborManagementPanelProps {
   leaderboard: LeaderboardEntry[];

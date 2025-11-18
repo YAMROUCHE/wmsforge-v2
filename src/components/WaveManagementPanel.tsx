@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Waves, Play, CheckCircle, XCircle, Clock, Package, TrendingUp, MapPin, AlertCircle } from 'lucide-react';
 import { Wave } from '../utils/waveEngine';
 

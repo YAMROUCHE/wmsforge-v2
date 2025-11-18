@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Download, FileDown, Loader2 } from 'lucide-react';
 import { quickExport, exportConfigs } from '../utils/exportData';
 

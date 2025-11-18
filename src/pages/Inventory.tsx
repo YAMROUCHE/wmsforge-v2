@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Package, Plus, ArrowRight, RefreshCw, AlertCircle, TrendingUp, TrendingDown, Box } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Package, Plus, ArrowRight, RefreshCw, TrendingUp, Box } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import ExportButton from '../components/ExportButton';
 
@@ -43,7 +43,7 @@ interface Movement {
 export default function Inventory() {
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
-  const [locations, setLocations] = useState<Location[]>([
+  const [locations, _setLocations] = useState<Location[]>([
     { id: 1, code: 'A-01-01', name: 'Zone A - Allée 1 - Rack 1' },
     { id: 2, code: 'A-01-02', name: 'Zone A - Allée 1 - Rack 2' },
     { id: 3, code: 'B-01-01', name: 'Zone B - Allée 1 - Rack 1' }
@@ -216,9 +216,9 @@ export default function Inventory() {
     }
   };
 
-  const totalStock = inventory.reduce((sum, item) => sum + (item.quantity || 0), 0);
-  const totalAvailable = inventory.reduce((sum, item) => sum + (item.quantity || 0), 0);
-  const totalReserved = inventory.reduce((sum, item) => sum + 0, 0);
+  const totalStock = inventory.reduce((sum, item) => sum + (item.quantityOnHand || 0), 0);
+  const totalAvailable = inventory.reduce((sum, item) => sum + (item.quantityAvailable || 0), 0);
+  const totalReserved = inventory.reduce((sum, item) => sum + (item.quantityReserved || 0), 0);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -333,10 +333,10 @@ export default function Inventory() {
                         {item.locationCode}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
-                        {(item.quantity || 0)}
+                        {(item.quantityOnHand || 0)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600">
-                        {(item.quantity || 0)}
+                        {(item.quantityAvailable || 0)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-orange-600">
                         {0}
@@ -522,7 +522,7 @@ export default function Inventory() {
                   <option value="">Sélectionner</option>
                   {inventory.filter(i => i.quantityAvailable > 0).map(item => (
                     <option key={item.id} value={item.id}>
-                      {item.productName} @ {item.locationCode} ({(item.quantity || 0)} disponibles)
+                      {item.productName} @ {item.locationCode} ({(item.quantityAvailable || 0)} disponibles)
                     </option>
                   ))}
                 </select>
@@ -615,7 +615,7 @@ export default function Inventory() {
                   <option value="">Sélectionner</option>
                   {inventory.map(item => (
                     <option key={item.id} value={item.id}>
-                      {item.productName} @ {item.locationCode} (Actuel: {(item.quantity || 0)})
+                      {item.productName} @ {item.locationCode} (Actuel: {(item.quantityOnHand || 0)})
                     </option>
                   ))}
                 </select>

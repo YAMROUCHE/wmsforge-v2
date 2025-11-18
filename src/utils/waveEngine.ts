@@ -176,7 +176,7 @@ export class WaveEngine {
     let waveNumber = 1;
 
     orders.forEach(order => {
-      const orderLines = order.items?.reduce((sum, item) => sum + 1, 0) || 1;
+      const orderLines = order.items?.reduce((sum, _item) => sum + 1, 0) || 1;
 
       // Si le batch actuel est plein, créer une vague AVANT d'ajouter la nouvelle commande
       if (currentBatch.length >= this.config.max_orders_per_wave ||

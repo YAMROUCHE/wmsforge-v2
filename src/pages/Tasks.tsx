@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { ListChecks } from 'lucide-react';
 import TaskManagementPanel from '../components/TaskManagementPanel';
 import { useTasks, useTaskMetrics, useUpdateTaskStatus } from '../hooks/useTasks';
@@ -19,6 +19,13 @@ export default function Tasks() {
         total_pending: metricsData.pending || 0,
         total_in_progress: metricsData.in_progress || 0,
         total_completed: metricsData.completed || 0,
+        avg_completion_time: metricsData.avg_time || 0,
+        tasks_by_priority: {
+          urgent: 0,
+          high: 0,
+          normal: 0,
+          low: 0,
+        },
       }
     : null;
 
@@ -30,12 +37,14 @@ export default function Tasks() {
         onSuccess: () => {
           addNotification({
             type: 'success',
+            title: 'Tâche démarrée',
             message: 'Tâche démarrée',
           });
         },
         onError: () => {
           addNotification({
             type: 'error',
+            title: 'Erreur',
             message: 'Erreur lors du démarrage de la tâche',
           });
         },
@@ -52,12 +61,14 @@ export default function Tasks() {
         onSuccess: () => {
           addNotification({
             type: 'success',
+            title: 'Tâche terminée',
             message: 'Tâche terminée avec succès',
           });
         },
         onError: () => {
           addNotification({
             type: 'error',
+            title: 'Erreur',
             message: 'Erreur lors de la finalisation de la tâche',
           });
         },
@@ -72,12 +83,14 @@ export default function Tasks() {
         onSuccess: () => {
           addNotification({
             type: 'info',
+            title: 'Tâche annulée',
             message: 'Tâche annulée',
           });
         },
         onError: () => {
           addNotification({
             type: 'error',
+            title: 'Erreur',
             message: 'Erreur lors de l\'annulation de la tâche',
           });
         },
@@ -91,6 +104,7 @@ export default function Tasks() {
     type: task.type as any,
     priority: task.priority as any,
     status: task.status as any,
+    product_id: task.product_id,
     product_name: task.product_name,
     quantity: task.quantity,
     from_location: task.from_location_id?.toString(),
@@ -98,6 +112,7 @@ export default function Tasks() {
     assigned_to: task.assigned_to?.toString(),
     estimated_time_seconds: task.estimated_time_seconds,
     actual_time_seconds: task.actual_time_seconds || undefined,
+    created_at: task.created_at ? new Date(task.created_at) : new Date(),
   }));
 
   const transformedOperators = operators.map((op) => ({
@@ -106,6 +121,8 @@ export default function Tasks() {
     zone: op.current_zone,
     status: op.status as any,
     productivity_score: op.productivity_score,
+    assigned_tasks: [],
+    completed_today: 0,
   }));
 
   return (
@@ -131,7 +148,7 @@ export default function Tasks() {
       <TaskManagementPanel
         tasks={transformedTasks}
         operators={transformedOperators}
-        metrics={metrics}
+        metrics={metrics || undefined}
         onStartTask={handleStartTask}
         onCompleteTask={handleCompleteTask}
         onCancelTask={handleCancelTask}

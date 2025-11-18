@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Package, ArrowRight, BarChart3, ShoppingCart, Box, MapPin, Settings, Layers, Clipboard, Users, FileText, Zap, Bell, CheckCircle2, TrendingUp, Star, Clock, Truck, Archive, ChevronDown, Shield, Headphones, Globe, Award } from 'lucide-react';
 

@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   ListChecks, Play, CheckCircle, XCircle, Clock, MapPin, Package,
-  TrendingUp, AlertCircle, Filter, User, ArrowRight
+  TrendingUp, User, ArrowRight
 } from 'lucide-react';
 import { Task, Operator, TaskMetrics } from '../utils/taskEngine';
 

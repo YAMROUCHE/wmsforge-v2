@@ -1,4 +1,3 @@
-import React from 'react';
 import { MapPin, TrendingUp, ArrowRight, Zap, Clock, Target } from 'lucide-react';
 import { LocationOptimization } from '../utils/locationOptimizer';
 

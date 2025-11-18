@@ -1,4 +1,4 @@
-import { ChevronRight, ChevronDown, Building2, Square, Minus, Layers, Package, MapPin, Box, Trash2, Eye, EyeOff } from 'lucide-react';
+import { ChevronRight, ChevronDown, Building2, Square, Minus, Layers, Package, MapPin, Box, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import type { WarehouseComponent } from '../../lib/warehouse';
 

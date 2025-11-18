@@ -21,7 +21,6 @@ export default function DraggableComponent({
   onDoubleClick,
   onDelete,
   onRotate,
-  zoom,
   isDraggedOver = false,
 }: DraggableComponentProps) {
   const { attributes, listeners, setNodeRef: setDragRef, isDragging } = useDraggable({
@@ -76,17 +75,17 @@ export default function DraggableComponent({
     switch (component.type) {
       case 'warehouse':
       case 'zone':
-        return component.name;
+        return (component as any).name;
       case 'aisle':
       case 'rack':
       case 'location':
-        return component.code;
+        return (component as any).code;
       case 'level':
-        return `N${component.levelNumber}`;
+        return `N${(component as any).levelNumber}`;
       case 'pallet':
-        return component.palletId;
+        return (component as any).palletId;
       default:
-        return component.name;
+        return (component as any).name || '';
     }
   };
 

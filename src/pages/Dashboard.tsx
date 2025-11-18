@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { TrendingUp, TrendingDown, Package, ShoppingCart, Activity, AlertTriangle, MapPin, ArrowRight } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { TrendingUp, Package, ShoppingCart, Activity, AlertTriangle, MapPin, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import AppLayout from '../components/layout/AppLayout';
 import SuggestionsPanel from '../components/SuggestionsPanel';

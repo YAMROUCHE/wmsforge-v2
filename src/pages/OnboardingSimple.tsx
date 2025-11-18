@@ -265,7 +265,7 @@ export default function OnboardingSimple() {
               </li>
               <li className="flex items-center gap-2">
                 <Check className="w-5 h-5 text-green-600" />
-                <span>{WAREHOUSE_TEMPLATES[selectedTemplate as keyof typeof WAREHOUSE_TEMPLATES]?.zones.length} zones de stockage</span>
+                <span>{WAREHOUSE_TEMPLATES[selectedTemplate as keyof typeof WAREHOUSE_TEMPLATES]?.zones} zones de stockage</span>
               </li>
               <li className="flex items-center gap-2">
                 <Check className="w-5 h-5 text-green-600" />

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { orderApi, Order, CreateOrderRequest } from '../services/api';
+import { orderApi, Order } from '../services/api';
 
 // Query keys for cache management
 export const orderKeys = {
@@ -79,7 +79,7 @@ export function useUpdateOrderStatus() {
 
       // Optimistically update
       queryClient.setQueryData<Order[]>(orderKeys.lists(), (old) =>
-        old?.map((order) => (order.id === id ? { ...order, status } : order))
+        old?.map((order) => (order.id === id ? { ...order, status } as Order : order)) as Order[]
       );
 
       return { previousOrders };

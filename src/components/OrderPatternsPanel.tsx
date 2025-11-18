@@ -1,4 +1,3 @@
-import React from 'react';
 import { TrendingUp, Package, Layers, MapPin, Sparkles, ShoppingBag, Link2 } from 'lucide-react';
 import { OrderPattern, ProductAssociation } from '../utils/orderPatternsAnalyzer';
 
