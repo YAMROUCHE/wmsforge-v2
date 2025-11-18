@@ -1,10 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Package, ArrowRight, BarChart3, ShoppingCart, Box, MapPin, Settings, Layers, Clipboard, Users, FileText, Zap, Bell } from 'lucide-react';
+import { Package, ArrowRight, BarChart3, ShoppingCart, Box, MapPin, Settings, Layers, Clipboard, Users, FileText, Zap, Bell, CheckCircle2, TrendingUp, Star, Clock, Truck, Archive } from 'lucide-react';
 
 export default function Landing() {
   const [activeDemo, setActiveDemo] = useState('dashboard');
   const [userInteracted, setUserInteracted] = useState(false);
+
+  // States pour les animations
+  const [statsVisible, setStatsVisible] = useState(false);
+  const [currentStat1, setCurrentStat1] = useState(0);
+  const [currentStat2, setCurrentStat2] = useState(0);
+  const [currentTestimonial, setCurrentTestimonial] = useState(0);
+  const [activeWorkflowStep, setActiveWorkflowStep] = useState(0);
+  const [sliderPosition, setSliderPosition] = useState(50);
+  const statsRef = useRef<HTMLDivElement>(null);
 
   // Liste des sections pour l'animation automatique
   const demoSections = ['dashboard', 'products', 'inventory', 'orders', 'locations', 'waves', 'tasks', 'labor', 'reports', 'settings'];
@@ -29,6 +38,64 @@ export default function Landing() {
     setUserInteracted(true); // Arrêter l'animation
     setActiveDemo(section);
   };
+
+  // Animation des compteurs de stats (Intersection Observer)
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !statsVisible) {
+          setStatsVisible(true);
+        }
+      },
+      { threshold: 0.5 }
+    );
+
+    if (statsRef.current) {
+      observer.observe(statsRef.current);
+    }
+
+    return () => {
+      if (statsRef.current) {
+        observer.unobserve(statsRef.current);
+      }
+    };
+  }, [statsVisible]);
+
+  // Compteur animé pour stat 1 (40%)
+  useEffect(() => {
+    if (statsVisible && currentStat1 < 40) {
+      const timer = setTimeout(() => {
+        setCurrentStat1((prev) => Math.min(prev + 1, 40));
+      }, 30);
+      return () => clearTimeout(timer);
+    }
+  }, [statsVisible, currentStat1]);
+
+  // Compteur animé pour stat 2 (95%)
+  useEffect(() => {
+    if (statsVisible && currentStat2 < 95) {
+      const timer = setTimeout(() => {
+        setCurrentStat2((prev) => Math.min(prev + 2, 95));
+      }, 20);
+      return () => clearTimeout(timer);
+    }
+  }, [statsVisible, currentStat2]);
+
+  // Animation des témoignages (rotation automatique)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTestimonial((prev) => (prev + 1) % 3);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Animation du workflow (étapes)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActiveWorkflowStep((prev) => (prev + 1) % 4);
+    }, 2000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div className="min-h-screen bg-white">
@@ -1161,21 +1228,36 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Stats Section */}
-      <section className="py-20 px-6">
+      {/* Stats Section - Animated */}
+      <section ref={statsRef} className="py-20 px-6 bg-gray-50">
         <div className="max-w-5xl mx-auto">
           <div className="grid md:grid-cols-3 gap-12 text-center">
-            <div>
-              <p className="text-4xl font-medium text-gray-900 mb-2">40%</p>
-              <p className="text-sm text-gray-600">Productivité en plus</p>
+            <div className="transition-all duration-500 transform hover:scale-105">
+              <p className="text-5xl font-medium text-gray-900 mb-2">
+                <span className="inline-block transition-all duration-300">
+                  {currentStat1}
+                </span>
+                <span className="text-green-600">%</span>
+              </p>
+              <p className="text-sm text-gray-600 font-medium">Productivité en plus</p>
+              <p className="text-xs text-gray-500 mt-1">vs. gestion manuelle</p>
             </div>
-            <div>
-              <p className="text-4xl font-medium text-gray-900 mb-2">95%</p>
-              <p className="text-sm text-gray-600">Erreurs en moins</p>
+            <div className="transition-all duration-500 transform hover:scale-105">
+              <p className="text-5xl font-medium text-gray-900 mb-2">
+                <span className="inline-block transition-all duration-300">
+                  {currentStat2}
+                </span>
+                <span className="text-blue-600">%</span>
+              </p>
+              <p className="text-sm text-gray-600 font-medium">Erreurs en moins</p>
+              <p className="text-xs text-gray-500 mt-1">grâce à l'automatisation</p>
             </div>
-            <div>
-              <p className="text-4xl font-medium text-gray-900 mb-2">5 min</p>
-              <p className="text-sm text-gray-600">Configuration</p>
+            <div className="transition-all duration-500 transform hover:scale-105">
+              <p className="text-5xl font-medium text-gray-900 mb-2">
+                <span className="text-purple-600">5</span> min
+              </p>
+              <p className="text-sm text-gray-600 font-medium">Configuration</p>
+              <p className="text-xs text-gray-500 mt-1">pour démarrer</p>
             </div>
           </div>
         </div>
@@ -1265,8 +1347,97 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Pricing - Simple et clair */}
+      {/* Workflow Animé */}
       <section className="py-20 px-6 bg-gray-50">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-12 space-y-3">
+            <h2 className="text-3xl font-medium text-gray-900">
+              De la réception à l'expédition en 4 clics
+            </h2>
+            <p className="text-gray-600 max-w-2xl mx-auto">
+              Un workflow fluide qui guide vos équipes à chaque étape.
+              Plus de formation complexe, tout est intuitif.
+            </p>
+          </div>
+
+          <div className="relative">
+            {/* Timeline horizontale */}
+            <div className="absolute top-12 left-0 right-0 h-0.5 bg-gray-200"></div>
+            <div
+              className="absolute top-12 left-0 h-0.5 bg-gray-900 transition-all duration-500"
+              style={{ width: `${(activeWorkflowStep + 1) * 25}%` }}
+            ></div>
+
+            <div className="grid md:grid-cols-4 gap-8 relative">
+              {/* Étape 1: Réception */}
+              <div className={`text-center transition-all duration-500 ${activeWorkflowStep >= 0 ? 'opacity-100 scale-100' : 'opacity-50 scale-95'}`}>
+                <div className={`w-24 h-24 mx-auto mb-4 rounded-full flex items-center justify-center transition-all duration-500 ${
+                  activeWorkflowStep >= 0 ? 'bg-gray-900 shadow-lg' : 'bg-gray-200'
+                }`}>
+                  <Package className={`w-10 h-10 ${activeWorkflowStep >= 0 ? 'text-white' : 'text-gray-400'}`} />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Réception</h3>
+                <p className="text-sm text-gray-600">
+                  Scannez les produits entrants, assignez automatiquement les emplacements
+                </p>
+                <p className="text-xs text-gray-500 mt-2">~30 sec/article</p>
+              </div>
+
+              {/* Étape 2: Stockage */}
+              <div className={`text-center transition-all duration-500 ${activeWorkflowStep >= 1 ? 'opacity-100 scale-100' : 'opacity-50 scale-95'}`}>
+                <div className={`w-24 h-24 mx-auto mb-4 rounded-full flex items-center justify-center transition-all duration-500 ${
+                  activeWorkflowStep >= 1 ? 'bg-gray-900 shadow-lg' : 'bg-gray-200'
+                }`}>
+                  <Archive className={`w-10 h-10 ${activeWorkflowStep >= 1 ? 'text-white' : 'text-gray-400'}`} />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Stockage</h3>
+                <p className="text-sm text-gray-600">
+                  Optimisation automatique des emplacements, zones chaudes/froides
+                </p>
+                <p className="text-xs text-gray-500 mt-2">Gain 40% d'espace</p>
+              </div>
+
+              {/* Étape 3: Picking */}
+              <div className={`text-center transition-all duration-500 ${activeWorkflowStep >= 2 ? 'opacity-100 scale-100' : 'opacity-50 scale-95'}`}>
+                <div className={`w-24 h-24 mx-auto mb-4 rounded-full flex items-center justify-center transition-all duration-500 ${
+                  activeWorkflowStep >= 2 ? 'bg-gray-900 shadow-lg' : 'bg-gray-200'
+                }`}>
+                  <Clipboard className={`w-10 h-10 ${activeWorkflowStep >= 2 ? 'text-white' : 'text-gray-400'}`} />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Picking</h3>
+                <p className="text-sm text-gray-600">
+                  Wave picking intelligent, regroupement de 50 commandes simultanées
+                </p>
+                <p className="text-xs text-gray-500 mt-2">3x plus rapide</p>
+              </div>
+
+              {/* Étape 4: Expédition */}
+              <div className={`text-center transition-all duration-500 ${activeWorkflowStep >= 3 ? 'opacity-100 scale-100' : 'opacity-50 scale-95'}`}>
+                <div className={`w-24 h-24 mx-auto mb-4 rounded-full flex items-center justify-center transition-all duration-500 ${
+                  activeWorkflowStep >= 3 ? 'bg-gray-900 shadow-lg' : 'bg-gray-200'
+                }`}>
+                  <Truck className={`w-10 h-10 ${activeWorkflowStep >= 3 ? 'text-white' : 'text-gray-400'}`} />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Expédition</h3>
+                <p className="text-sm text-gray-600">
+                  Étiquettes automatiques, tracking clients, synchronisation transporteurs
+                </p>
+                <p className="text-xs text-gray-500 mt-2">95% satisfaction</p>
+              </div>
+            </div>
+
+            {/* Indicateur d'étape */}
+            <div className="text-center mt-8">
+              <p className="text-sm text-gray-500">
+                Étape {activeWorkflowStep + 1}/4 • Animation automatique
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing - Simple et clair */}
+      <section className="py-20 px-6 bg-white">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16 space-y-3">
             <h2 className="text-3xl font-medium text-gray-900">
@@ -1359,6 +1530,297 @@ export default function Landing() {
           <p className="text-center text-sm text-gray-600 mt-12">
             14 jours d'essai gratuit · Sans engagement
           </p>
+        </div>
+      </section>
+
+      {/* Timeline de déploiement */}
+      <section className="py-20 px-6 bg-gray-50">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-12 space-y-3">
+            <h2 className="text-3xl font-medium text-gray-900">
+              Du premier scan au ROI en une semaine
+            </h2>
+            <p className="text-gray-600 max-w-2xl mx-auto">
+              Pas de projet IT de 6 mois. Vous êtes opérationnel immédiatement.
+            </p>
+          </div>
+
+          <div className="relative">
+            {/* Ligne verticale */}
+            <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-gray-200"></div>
+
+            <div className="space-y-8">
+              {/* Jour 0 */}
+              <div className="relative flex items-start gap-6">
+                <div className="flex-shrink-0 w-16 h-16 bg-gray-900 rounded-full flex items-center justify-center z-10">
+                  <Clock className="w-8 h-8 text-white" />
+                </div>
+                <div className="flex-1 pt-3">
+                  <h3 className="text-xl font-medium text-gray-900 mb-2">5 minutes • Inscription</h3>
+                  <p className="text-gray-600">
+                    Créez votre compte, configurez votre entrepôt. Pas de carte bancaire requise.
+                  </p>
+                </div>
+              </div>
+
+              {/* 1 heure */}
+              <div className="relative flex items-start gap-6">
+                <div className="flex-shrink-0 w-16 h-16 bg-gray-900 rounded-full flex items-center justify-center z-10">
+                  <Package className="w-8 h-8 text-white" />
+                </div>
+                <div className="flex-1 pt-3">
+                  <h3 className="text-xl font-medium text-gray-900 mb-2">1 heure • Premier scan</h3>
+                  <p className="text-gray-600">
+                    Importez vos produits (CSV ou API), créez vos emplacements. Premier article scanné.
+                  </p>
+                </div>
+              </div>
+
+              {/* 1 jour */}
+              <div className="relative flex items-start gap-6">
+                <div className="flex-shrink-0 w-16 h-16 bg-gray-900 rounded-full flex items-center justify-center z-10">
+                  <Users className="w-8 h-8 text-white" />
+                </div>
+                <div className="flex-1 pt-3">
+                  <h3 className="text-xl font-medium text-gray-900 mb-2">1 jour • Équipe formée</h3>
+                  <p className="text-gray-600">
+                    Interface intuitive, pas besoin de formation. Vos équipes sont autonomes immédiatement.
+                  </p>
+                </div>
+              </div>
+
+              {/* 1 semaine */}
+              <div className="relative flex items-start gap-6">
+                <div className="flex-shrink-0 w-16 h-16 bg-green-600 rounded-full flex items-center justify-center z-10 shadow-lg">
+                  <TrendingUp className="w-8 h-8 text-white" />
+                </div>
+                <div className="flex-1 pt-3">
+                  <h3 className="text-xl font-medium text-gray-900 mb-2">1 semaine • ROI positif</h3>
+                  <p className="text-gray-600">
+                    40% de productivité en plus, 95% d'erreurs en moins. Le retour sur investissement est immédiat.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Témoignages en rotation */}
+      <section className="py-20 px-6 bg-white">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-12 space-y-3">
+            <h2 className="text-3xl font-medium text-gray-900">
+              Ils ont transformé leur entrepôt
+            </h2>
+            <p className="text-gray-600">
+              Des résultats concrets, pas des promesses
+            </p>
+          </div>
+
+          <div className="relative min-h-[300px]">
+            {/* Témoignage 1 */}
+            <div className={`absolute inset-0 transition-all duration-500 ${
+              currentTestimonial === 0 ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-8 pointer-events-none'
+            }`}>
+              <div className="bg-gray-50 rounded-2xl p-12 text-center">
+                <div className="flex justify-center gap-1 mb-6">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                  ))}
+                </div>
+                <p className="text-xl text-gray-900 mb-6 leading-relaxed">
+                  "En 2 semaines, nous avons réduit nos erreurs de préparation de 87%.
+                  L'équipe ne veut plus revenir aux anciennes méthodes."
+                </p>
+                <div className="flex items-center justify-center gap-4">
+                  <div className="w-12 h-12 bg-gray-900 rounded-full flex items-center justify-center">
+                    <span className="text-white font-medium">MR</span>
+                  </div>
+                  <div className="text-left">
+                    <p className="font-medium text-gray-900">Marie Rousseau</p>
+                    <p className="text-sm text-gray-600">Directrice Logistique • LogisPro</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Témoignage 2 */}
+            <div className={`absolute inset-0 transition-all duration-500 ${
+              currentTestimonial === 1 ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-8 pointer-events-none'
+            }`}>
+              <div className="bg-gray-50 rounded-2xl p-12 text-center">
+                <div className="flex justify-center gap-1 mb-6">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                  ))}
+                </div>
+                <p className="text-xl text-gray-900 mb-6 leading-relaxed">
+                  "Le wave picking nous a permis de traiter 3x plus de commandes avec la même équipe.
+                  Le ROI a été immédiat."
+                </p>
+                <div className="flex items-center justify-center gap-4">
+                  <div className="w-12 h-12 bg-gray-900 rounded-full flex items-center justify-center">
+                    <span className="text-white font-medium">JD</span>
+                  </div>
+                  <div className="text-left">
+                    <p className="font-medium text-gray-900">Jean Dupont</p>
+                    <p className="text-sm text-gray-600">CEO • FastShip</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Témoignage 3 */}
+            <div className={`absolute inset-0 transition-all duration-500 ${
+              currentTestimonial === 2 ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-8 pointer-events-none'
+            }`}>
+              <div className="bg-gray-50 rounded-2xl p-12 text-center">
+                <div className="flex justify-center gap-1 mb-6">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                  ))}
+                </div>
+                <p className="text-xl text-gray-900 mb-6 leading-relaxed">
+                  "Interface ultra simple, équipe formée en 1 journée.
+                  Fini les fichiers Excel et les erreurs d'inventaire."
+                </p>
+                <div className="flex items-center justify-center gap-4">
+                  <div className="w-12 h-12 bg-gray-900 rounded-full flex items-center justify-center">
+                    <span className="text-white font-medium">SL</span>
+                  </div>
+                  <div className="text-left">
+                    <p className="font-medium text-gray-900">Sophie Laurent</p>
+                    <p className="text-sm text-gray-600">Responsable Stock • EcoMarket</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Indicateurs */}
+          <div className="flex justify-center gap-2 mt-8">
+            {[0, 1, 2].map((index) => (
+              <button
+                key={index}
+                onClick={() => setCurrentTestimonial(index)}
+                className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                  currentTestimonial === index ? 'bg-gray-900 w-8' : 'bg-gray-300'
+                }`}
+              />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Comparaison Avant/Après */}
+      <section className="py-20 px-6 bg-gray-50">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-12 space-y-3">
+            <h2 className="text-3xl font-medium text-gray-900">
+              Avant / Après 1WMS
+            </h2>
+            <p className="text-gray-600">
+              La différence est spectaculaire
+            </p>
+          </div>
+
+          <div className="relative overflow-hidden bg-white rounded-2xl border border-gray-200">
+            <div className="grid md:grid-cols-2">
+              {/* Avant */}
+              <div className={`p-8 transition-all duration-300 ${sliderPosition > 50 ? 'opacity-100' : 'opacity-50'}`}>
+                <div className="mb-6">
+                  <span className="inline-block px-3 py-1 bg-red-100 text-red-700 text-sm font-medium rounded-full">
+                    ❌ Sans 1WMS
+                  </span>
+                </div>
+                <div className="space-y-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-6 h-6 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-red-600 text-sm">✕</span>
+                    </div>
+                    <p className="text-gray-600">Fichiers Excel partout, versions obsolètes</p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-6 h-6 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-red-600 text-sm">✕</span>
+                    </div>
+                    <p className="text-gray-600">Erreurs d'inventaire régulières, clients insatisfaits</p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-6 h-6 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-red-600 text-sm">✕</span>
+                    </div>
+                    <p className="text-gray-600">Préparateurs perdent 60% de leur temps en déplacements</p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-6 h-6 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-red-600 text-sm">✕</span>
+                    </div>
+                    <p className="text-gray-600">Ruptures de stock fréquentes, aucune alerte</p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-6 h-6 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-red-600 text-sm">✕</span>
+                    </div>
+                    <p className="text-gray-600">Impossible de suivre les performances en temps réel</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Après */}
+              <div className={`p-8 bg-gray-50 transition-all duration-300 ${sliderPosition < 50 ? 'opacity-100' : 'opacity-50'}`}>
+                <div className="mb-6">
+                  <span className="inline-block px-3 py-1 bg-green-100 text-green-700 text-sm font-medium rounded-full">
+                    ✓ Avec 1WMS
+                  </span>
+                </div>
+                <div className="space-y-4">
+                  <div className="flex items-start gap-3">
+                    <CheckCircle2 className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" />
+                    <p className="text-gray-900 font-medium">Données centralisées, synchronisées en temps réel</p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <CheckCircle2 className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" />
+                    <p className="text-gray-900 font-medium">95% d'erreurs en moins, clients ravis</p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <CheckCircle2 className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" />
+                    <p className="text-gray-900 font-medium">Wave picking : 3x plus de commandes préparées/heure</p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <CheckCircle2 className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" />
+                    <p className="text-gray-900 font-medium">Alertes automatiques, réapprovisionnement optimisé</p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <CheckCircle2 className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" />
+                    <p className="text-gray-900 font-medium">Dashboard live, KPIs à jour à la seconde</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Slider interactif */}
+            <div className="p-4 border-t border-gray-200 bg-white">
+              <div className="relative">
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={sliderPosition}
+                  onChange={(e) => setSliderPosition(Number(e.target.value))}
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                  style={{
+                    background: `linear-gradient(to right, #ef4444 0%, #ef4444 ${sliderPosition}%, #10b981 ${sliderPosition}%, #10b981 100%)`
+                  }}
+                />
+                <div className="flex justify-between mt-2 text-xs text-gray-500">
+                  <span>Sans 1WMS</span>
+                  <span>Avec 1WMS</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
