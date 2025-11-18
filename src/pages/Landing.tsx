@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Package, ArrowRight, BarChart3, ShoppingCart, Box, MapPin, Settings, Layers, Clipboard, Users, FileText, Zap, Bell, CheckCircle2, TrendingUp, Star, Clock, Truck, Archive } from 'lucide-react';
+import { Package, ArrowRight, BarChart3, ShoppingCart, Box, MapPin, Settings, Layers, Clipboard, Users, FileText, Zap, Bell, CheckCircle2, TrendingUp, Star, Clock, Truck, Archive, ChevronDown, Shield, Headphones, Globe, Award } from 'lucide-react';
 
 export default function Landing() {
   const [activeDemo, setActiveDemo] = useState('dashboard');
@@ -13,6 +13,7 @@ export default function Landing() {
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
   const [activeWorkflowStep, setActiveWorkflowStep] = useState(0);
   const [sliderPosition, setSliderPosition] = useState(50);
+  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
   const statsRef = useRef<HTMLDivElement>(null);
 
   // Liste des sections pour l'animation automatique
@@ -1824,7 +1825,241 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Final CTA - Minimaliste */}
+      {/* Social Proof - Chiffres clés */}
+      <section className="py-16 px-6 bg-white border-y border-gray-100">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-2xl font-medium text-gray-900 mb-2">
+              Utilisé par des centaines d'entrepôts
+            </h2>
+            <p className="text-gray-600">Des résultats prouvés, chaque jour</p>
+          </div>
+
+          <div className="grid md:grid-cols-4 gap-8 text-center">
+            <div className="space-y-2">
+              <p className="text-4xl font-medium text-gray-900">200+</p>
+              <p className="text-sm text-gray-600">Entrepôts actifs</p>
+            </div>
+            <div className="space-y-2">
+              <p className="text-4xl font-medium text-gray-900">12K+</p>
+              <p className="text-sm text-gray-600">Commandes/jour</p>
+            </div>
+            <div className="space-y-2">
+              <p className="text-4xl font-medium text-gray-900">4.8/5</p>
+              <p className="text-sm text-gray-600">Note moyenne</p>
+            </div>
+            <div className="space-y-2">
+              <p className="text-4xl font-medium text-gray-900">99.9%</p>
+              <p className="text-sm text-gray-600">Uptime</p>
+            </div>
+          </div>
+
+          {/* Logos clients (placeholders) */}
+          <div className="mt-12 flex flex-wrap justify-center items-center gap-8 opacity-40">
+            <div className="text-2xl font-bold text-gray-400">E-Commerce Pro</div>
+            <div className="text-2xl font-bold text-gray-400">LogisFast</div>
+            <div className="text-2xl font-bold text-gray-400">StockMaster</div>
+            <div className="text-2xl font-bold text-gray-400">ShipQuick</div>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="py-20 px-6 bg-gray-50">
+        <div className="max-w-3xl mx-auto">
+          <div className="text-center mb-12 space-y-3">
+            <h2 className="text-3xl font-medium text-gray-900">
+              Questions fréquentes
+            </h2>
+            <p className="text-gray-600">
+              Tout ce que vous devez savoir avant de commencer
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            {/* FAQ 1 */}
+            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+              <button
+                onClick={() => setOpenFaqIndex(openFaqIndex === 0 ? null : 0)}
+                className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-gray-50 transition-colors"
+              >
+                <span className="font-medium text-gray-900">
+                  Combien de temps prend la migration depuis Excel/autre système ?
+                </span>
+                <ChevronDown
+                  className={`w-5 h-5 text-gray-500 transition-transform duration-200 ${
+                    openFaqIndex === 0 ? 'rotate-180' : ''
+                  }`}
+                />
+              </button>
+              <div
+                className={`overflow-hidden transition-all duration-200 ${
+                  openFaqIndex === 0 ? 'max-h-96' : 'max-h-0'
+                }`}
+              >
+                <div className="px-6 pb-4 text-gray-600">
+                  En moyenne 1-2 heures. Importez vos produits via CSV, créez vos emplacements,
+                  et c'est terminé. Pas besoin de développeur ni de migration complexe.
+                  Notre équipe support vous guide gratuitement lors de la mise en route.
+                </div>
+              </div>
+            </div>
+
+            {/* FAQ 2 */}
+            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+              <button
+                onClick={() => setOpenFaqIndex(openFaqIndex === 1 ? null : 1)}
+                className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-gray-50 transition-colors"
+              >
+                <span className="font-medium text-gray-900">
+                  Mes données sont-elles sécurisées ?
+                </span>
+                <ChevronDown
+                  className={`w-5 h-5 text-gray-500 transition-transform duration-200 ${
+                    openFaqIndex === 1 ? 'rotate-180' : ''
+                  }`}
+                />
+              </button>
+              <div
+                className={`overflow-hidden transition-all duration-200 ${
+                  openFaqIndex === 1 ? 'max-h-96' : 'max-h-0'
+                }`}
+              >
+                <div className="px-6 pb-4 text-gray-600">
+                  Absolument. Hébergement en Europe (RGPD compliant), chiffrement SSL,
+                  sauvegardes quotidiennes automatiques. Vos données vous appartiennent :
+                  export complet en 1 clic à tout moment. Nous ne vendons jamais vos données.
+                </div>
+              </div>
+            </div>
+
+            {/* FAQ 3 */}
+            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+              <button
+                onClick={() => setOpenFaqIndex(openFaqIndex === 2 ? null : 2)}
+                className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-gray-50 transition-colors"
+              >
+                <span className="font-medium text-gray-900">
+                  Que se passe-t-il après les 14 jours d'essai ?
+                </span>
+                <ChevronDown
+                  className={`w-5 h-5 text-gray-500 transition-transform duration-200 ${
+                    openFaqIndex === 2 ? 'rotate-180' : ''
+                  }`}
+                />
+              </button>
+              <div
+                className={`overflow-hidden transition-all duration-200 ${
+                  openFaqIndex === 2 ? 'max-h-96' : 'max-h-0'
+                }`}
+              >
+                <div className="px-6 pb-4 text-gray-600">
+                  Aucune carte bancaire requise pour l'essai. Après 14 jours, choisissez votre plan
+                  ou votre compte passe simplement en mode lecture seule. Vos données restent accessibles,
+                  rien n'est supprimé. Réactivation en 1 clic si vous changez d'avis.
+                </div>
+              </div>
+            </div>
+
+            {/* FAQ 4 */}
+            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+              <button
+                onClick={() => setOpenFaqIndex(openFaqIndex === 3 ? null : 3)}
+                className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-gray-50 transition-colors"
+              >
+                <span className="font-medium text-gray-900">
+                  Le support est-il en français ?
+                </span>
+                <ChevronDown
+                  className={`w-5 h-5 text-gray-500 transition-transform duration-200 ${
+                    openFaqIndex === 3 ? 'rotate-180' : ''
+                  }`}
+                />
+              </button>
+              <div
+                className={`overflow-hidden transition-all duration-200 ${
+                  openFaqIndex === 3 ? 'max-h-96' : 'max-h-0'
+                }`}
+              >
+                <div className="px-6 pb-4 text-gray-600">
+                  Oui ! Support en français par email (réponse sous 2h en moyenne) et chat en direct
+                  pendant les heures ouvrées. Documentation complète en français. Pour les plans Pro/Enterprise,
+                  support téléphonique dédié.
+                </div>
+              </div>
+            </div>
+
+            {/* FAQ 5 */}
+            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+              <button
+                onClick={() => setOpenFaqIndex(openFaqIndex === 4 ? null : 4)}
+                className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-gray-50 transition-colors"
+              >
+                <span className="font-medium text-gray-900">
+                  Puis-je importer mes produits existants ?
+                </span>
+                <ChevronDown
+                  className={`w-5 h-5 text-gray-500 transition-transform duration-200 ${
+                    openFaqIndex === 4 ? 'rotate-180' : ''
+                  }`}
+                />
+              </button>
+              <div
+                className={`overflow-hidden transition-all duration-200 ${
+                  openFaqIndex === 4 ? 'max-h-96' : 'max-h-0'
+                }`}
+              >
+                <div className="px-6 pb-4 text-gray-600">
+                  Absolument. Import CSV massif en 1 clic (jusqu'à 10,000 produits à la fois).
+                  Format Excel standard accepté. API disponible pour synchronisation automatique
+                  depuis votre ERP ou e-commerce. Import depuis Shopify/WooCommerce intégré.
+                </div>
+              </div>
+            </div>
+
+            {/* FAQ 6 */}
+            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+              <button
+                onClick={() => setOpenFaqIndex(openFaqIndex === 5 ? null : 5)}
+                className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-gray-50 transition-colors"
+              >
+                <span className="font-medium text-gray-900">
+                  Compatible avec mon système actuel ?
+                </span>
+                <ChevronDown
+                  className={`w-5 h-5 text-gray-500 transition-transform duration-200 ${
+                    openFaqIndex === 5 ? 'rotate-180' : ''
+                  }`}
+                />
+              </button>
+              <div
+                className={`overflow-hidden transition-all duration-200 ${
+                  openFaqIndex === 5 ? 'max-h-96' : 'max-h-0'
+                }`}
+              >
+                <div className="px-6 pb-4 text-gray-600">
+                  1WMS fonctionne sur n'importe quel navigateur moderne (Chrome, Safari, Firefox, Edge).
+                  Compatible mobile (iOS/Android) pour scanner en déplacement. API REST complète
+                  pour intégration avec votre ERP, CRM, ou e-commerce. Webhooks disponibles.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Contact pour autres questions */}
+          <div className="mt-8 text-center">
+            <p className="text-gray-600 mb-4">Vous avez une autre question ?</p>
+            <Link to="/auth">
+              <button className="inline-flex items-center gap-2 text-gray-900 hover:text-gray-700 transition-colors">
+                <Headphones className="w-4 h-4" />
+                Contactez notre équipe
+              </button>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Final CTA avec Trust Badges */}
       <section className="py-20 px-6">
         <div className="max-w-3xl mx-auto text-center space-y-8">
           <h2 className="text-4xl font-medium text-gray-900">
@@ -1842,6 +2077,26 @@ export default function Landing() {
                 Planifier une démo
               </button>
             </Link>
+          </div>
+
+          {/* Trust Badges */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-2xl mx-auto pt-8 border-t border-gray-100">
+            <div className="flex flex-col items-center gap-2 text-center">
+              <Shield className="w-8 h-8 text-green-600" />
+              <p className="text-xs text-gray-600">RGPD<br />Compliant</p>
+            </div>
+            <div className="flex flex-col items-center gap-2 text-center">
+              <Globe className="w-8 h-8 text-blue-600" />
+              <p className="text-xs text-gray-600">Hébergé<br />en EU</p>
+            </div>
+            <div className="flex flex-col items-center gap-2 text-center">
+              <Headphones className="w-8 h-8 text-purple-600" />
+              <p className="text-xs text-gray-600">Support<br />7j/7</p>
+            </div>
+            <div className="flex flex-col items-center gap-2 text-center">
+              <Award className="w-8 h-8 text-orange-600" />
+              <p className="text-xs text-gray-600">Annulation<br />en 1 clic</p>
+            </div>
           </div>
         </div>
       </section>
