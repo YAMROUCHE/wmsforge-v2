@@ -280,43 +280,7 @@ app.post('/:id/sync', async (c) => {
       return c.json({ error: 'Integration not found' }, 404);
     }
 
-    let result;
-
-    switch (integration.type) {
-      case 'ecommerce': {
-        // Déterminer quel service utiliser selon le nom
-        if (integration.name === 'Shopify') {
-          const shopifyService = new ShopifyService(c.env.DB, integration);
-          if (entity_type === 'products') {
-            result = await shopifyService.syncProducts();
-          } else {
-            result = await shopifyService.syncOrders();
-          }
-        } else if (integration.name === 'WooCommerce') {
-          const wooService = new WooCommerceService(c.env.DB, integration);
-          if (entity_type === 'products') {
-            result = await wooService.syncProducts();
-          } else {
-            result = await wooService.syncOrders();
-          }
-        } else {
-          return c.json({ error: 'Unsupported ecommerce platform' }, 400);
-        }
-        break;
-      }
-      case 'crm': {
-        const sfService = new SalesforceService(c.env.DB, integration);
-        if (entity_type === 'products' || entity_type === 'accounts') {
-          result = await sfService.syncProducts(); // Sync Accounts
-        } else {
-          result = await sfService.syncOrders(); // Sync Opportunities
-        }
-        break;
-      }
-      default:
-        return c.json({ error: 'Unsupported integration type' }, 400);
-    }
-
+    const result = await performIntegrationSync(c.env.DB, integration, entity_type);
     return c.json({ sync: result });
   } catch (error) {
     return c.json({ error: 'Sync failed', details: (error as Error).message }, 500);
@@ -391,6 +355,61 @@ app.post('/webhooks/shopify/:integration_id', async (c) => {
     return c.json({ error: 'Webhook processing failed' }, 500);
   }
 });
+
+/**
+ * Helper: Perform integration sync based on type and entity
+ */
+async function performIntegrationSync(
+  db: D1Database,
+  integration: Integration,
+  entity_type: string
+): Promise<any> {
+  switch (integration.type) {
+    case 'ecommerce':
+      return performEcommerceSync(db, integration, entity_type);
+    case 'crm':
+      return performCrmSync(db, integration, entity_type);
+    default:
+      throw new Error('Unsupported integration type');
+  }
+}
+
+/**
+ * Helper: Perform e-commerce platform sync
+ */
+async function performEcommerceSync(
+  db: D1Database,
+  integration: Integration,
+  entity_type: string
+): Promise<any> {
+  if (integration.name === 'Shopify') {
+    const shopifyService = new ShopifyService(db, integration);
+    return entity_type === 'products'
+      ? await shopifyService.syncProducts()
+      : await shopifyService.syncOrders();
+  } else if (integration.name === 'WooCommerce') {
+    const wooService = new WooCommerceService(db, integration);
+    return entity_type === 'products'
+      ? await wooService.syncProducts()
+      : await wooService.syncOrders();
+  } else {
+    throw new Error('Unsupported ecommerce platform');
+  }
+}
+
+/**
+ * Helper: Perform CRM platform sync
+ */
+async function performCrmSync(
+  db: D1Database,
+  integration: Integration,
+  entity_type: string
+): Promise<any> {
+  const sfService = new SalesforceService(db, integration);
+  return (entity_type === 'products' || entity_type === 'accounts')
+    ? await sfService.syncProducts() // Sync Accounts
+    : await sfService.syncOrders(); // Sync Opportunities
+}
 
 /**
  * Helper : Enregistrer les webhooks sur Shopify

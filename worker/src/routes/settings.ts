@@ -127,41 +127,7 @@ app.put('/notifications', async (c) => {
     const userId = 1; // TODO: Récupérer depuis JWT
     const body = await c.req.json();
 
-    // Vérifier si l'utilisateur a déjà des préférences
-    const existing = await c.env.DB.prepare(
-      'SELECT user_id FROM user_preferences WHERE user_id = ?'
-    ).bind(userId).first();
-
-    if (existing) {
-      await c.env.DB.prepare(`
-        UPDATE user_preferences
-        SET notification_email = ?,
-            notification_orders = ?,
-            notification_inventory = ?,
-            notification_low_stock = ?,
-            updated_at = CURRENT_TIMESTAMP
-        WHERE user_id = ?
-      `).bind(
-        body.emailNotifications ? 1 : 0,
-        body.orderNotifications ? 1 : 0,
-        body.inventoryAlerts ? 1 : 0,
-        body.lowStockAlerts ? 1 : 0,
-        userId
-      ).run();
-    } else {
-      await c.env.DB.prepare(`
-        INSERT INTO user_preferences (
-          user_id, notification_email, notification_orders,
-          notification_inventory, notification_low_stock
-        ) VALUES (?, ?, ?, ?, ?)
-      `).bind(
-        userId,
-        body.emailNotifications ? 1 : 0,
-        body.orderNotifications ? 1 : 0,
-        body.inventoryAlerts ? 1 : 0,
-        body.lowStockAlerts ? 1 : 0
-      ).run();
-    }
+    await upsertNotificationPreferences(c.env.DB, userId, body);
 
     return c.json({ message: 'Notification preferences updated successfully' });
   } catch (error) {
@@ -176,34 +142,7 @@ app.put('/appearance', async (c) => {
     const userId = 1; // TODO: Récupérer depuis JWT
     const body = await c.req.json();
 
-    // Vérifier si l'utilisateur a déjà des préférences
-    const existing = await c.env.DB.prepare(
-      'SELECT user_id FROM user_preferences WHERE user_id = ?'
-    ).bind(userId).first();
-
-    if (existing) {
-      await c.env.DB.prepare(`
-        UPDATE user_preferences
-        SET theme = ?, language = ?, date_format = ?, updated_at = CURRENT_TIMESTAMP
-        WHERE user_id = ?
-      `).bind(
-        body.theme,
-        body.language,
-        body.dateFormat,
-        userId
-      ).run();
-    } else {
-      await c.env.DB.prepare(`
-        INSERT INTO user_preferences (
-          user_id, theme, language, date_format
-        ) VALUES (?, ?, ?, ?)
-      `).bind(
-        userId,
-        body.theme,
-        body.language,
-        body.dateFormat
-      ).run();
-    }
+    await upsertAppearancePreferences(c.env.DB, userId, body);
 
     return c.json({ message: 'Appearance preferences updated successfully' });
   } catch (error) {
@@ -211,5 +150,95 @@ app.put('/appearance', async (c) => {
     return c.json({ error: 'Failed to update appearance' }, 500);
   }
 });
+
+/**
+ * Helper: Upsert notification preferences for a user
+ */
+async function upsertNotificationPreferences(
+  db: D1Database,
+  userId: number,
+  body: {
+    emailNotifications: boolean;
+    orderNotifications: boolean;
+    inventoryAlerts: boolean;
+    lowStockAlerts: boolean;
+  }
+): Promise<void> {
+  const existing = await db.prepare(
+    'SELECT user_id FROM user_preferences WHERE user_id = ?'
+  ).bind(userId).first();
+
+  if (existing) {
+    await db.prepare(`
+      UPDATE user_preferences
+      SET notification_email = ?,
+          notification_orders = ?,
+          notification_inventory = ?,
+          notification_low_stock = ?,
+          updated_at = CURRENT_TIMESTAMP
+      WHERE user_id = ?
+    `).bind(
+      body.emailNotifications ? 1 : 0,
+      body.orderNotifications ? 1 : 0,
+      body.inventoryAlerts ? 1 : 0,
+      body.lowStockAlerts ? 1 : 0,
+      userId
+    ).run();
+  } else {
+    await db.prepare(`
+      INSERT INTO user_preferences (
+        user_id, notification_email, notification_orders,
+        notification_inventory, notification_low_stock
+      ) VALUES (?, ?, ?, ?, ?)
+    `).bind(
+      userId,
+      body.emailNotifications ? 1 : 0,
+      body.orderNotifications ? 1 : 0,
+      body.inventoryAlerts ? 1 : 0,
+      body.lowStockAlerts ? 1 : 0
+    ).run();
+  }
+}
+
+/**
+ * Helper: Upsert appearance preferences for a user
+ */
+async function upsertAppearancePreferences(
+  db: D1Database,
+  userId: number,
+  body: {
+    theme: string;
+    language: string;
+    dateFormat: string;
+  }
+): Promise<void> {
+  const existing = await db.prepare(
+    'SELECT user_id FROM user_preferences WHERE user_id = ?'
+  ).bind(userId).first();
+
+  if (existing) {
+    await db.prepare(`
+      UPDATE user_preferences
+      SET theme = ?, language = ?, date_format = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE user_id = ?
+    `).bind(
+      body.theme,
+      body.language,
+      body.dateFormat,
+      userId
+    ).run();
+  } else {
+    await db.prepare(`
+      INSERT INTO user_preferences (
+        user_id, theme, language, date_format
+      ) VALUES (?, ?, ?, ?)
+    `).bind(
+      userId,
+      body.theme,
+      body.language,
+      body.dateFormat
+    ).run();
+  }
+}
 
 export default app;
