@@ -89,7 +89,7 @@ export class ShopifyService extends IntegrationService {
         throw new Error(`Shopify API error: ${response.status}`);
       }
 
-      const data = await response.json();
+      const data = await response.json() as { orders?: ShopifyOrder[] };
       const orders: ShopifyOrder[] = data.orders || [];
 
       // Import chaque commande
@@ -158,7 +158,7 @@ export class ShopifyService extends IntegrationService {
         throw new Error(`Shopify API error: ${response.status}`);
       }
 
-      const data = await response.json();
+      const data = await response.json() as { products?: ShopifyProduct[] };
       const products: ShopifyProduct[] = data.products || [];
 
       for (const shopifyProduct of products) {

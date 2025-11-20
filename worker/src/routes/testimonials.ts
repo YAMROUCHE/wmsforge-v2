@@ -271,9 +271,9 @@ app.post('/prompt/track', async (c) => {
       organizationId,
       prompt_type || 'in_app',
       was_clicked || false,
-      Math.floor(userStats?.days_since_signup || 0),
-      userStats?.orders_processed || 0,
-      userStats?.tasks_completed || 0
+      Math.floor((userStats as any)?.days_since_signup || 0),
+      (userStats as any)?.orders_processed || 0,
+      (userStats as any)?.tasks_completed || 0
     ).run();
 
     return c.json({ success: true });
@@ -305,7 +305,7 @@ app.get('/prompt/should-show', async (c) => {
       WHERE user_id = ? AND organization_id = ?
     `).bind(userId, organizationId).first();
 
-    if (promptCount && promptCount.count >= 3) {
+    if (promptCount && (promptCount as any).count >= 3) {
       return c.json({ shouldShow: false, reason: 'max_prompts_reached' });
     }
 
@@ -317,7 +317,7 @@ app.get('/prompt/should-show', async (c) => {
     `).bind(userId, organizationId).first();
 
     if (recentPrompt) {
-      const daysSince = (Date.now() - new Date(recentPrompt.prompt_shown_at).getTime()) / (1000 * 60 * 60 * 24);
+      const daysSince = (Date.now() - new Date((recentPrompt as any).prompt_shown_at).getTime()) / (1000 * 60 * 60 * 24);
       if (daysSince < 7) {
         return c.json({ shouldShow: false, reason: 'dismissed_recently' });
       }
@@ -333,9 +333,9 @@ app.get('/prompt/should-show', async (c) => {
       WHERE u.id = ?
     `).bind(organizationId, organizationId, userId).first();
 
-    const daysSinceSignup = userStats?.days_since_signup || 0;
-    const ordersCount = userStats?.orders_count || 0;
-    const tasksCount = userStats?.tasks_count || 0;
+    const daysSinceSignup = (userStats as any)?.days_since_signup || 0;
+    const ordersCount = (userStats as any)?.orders_count || 0;
+    const tasksCount = (userStats as any)?.tasks_count || 0;
 
     const isActiveEnough = daysSinceSignup >= 30 && (ordersCount >= 5 || tasksCount >= 20);
 

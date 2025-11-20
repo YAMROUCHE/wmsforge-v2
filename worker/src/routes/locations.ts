@@ -48,7 +48,7 @@ app.post('/', async (c) => {
     return c.json({ message: 'Location created successfully' });
   } catch (error) {
     console.error('Error creating location:', error);
-    return c.json({ error: 'Failed to create location', details: error.message }, 500);
+    return c.json({ error: 'Failed to create location', details: (error as Error).message }, 500);
   }
 });
 

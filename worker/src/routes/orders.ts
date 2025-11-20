@@ -156,7 +156,7 @@ app.post('/', async (c) => {
     });
   } catch (error) {
     console.error('Error creating order:', error);
-    return c.json({ error: 'Failed to create order', details: error.message }, 500);
+    return c.json({ error: 'Failed to create order', details: (error as Error).message }, 500);
   }
 });
 

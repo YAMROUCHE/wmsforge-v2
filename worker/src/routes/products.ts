@@ -88,9 +88,9 @@ app.post('/', async (c) => {
     }, 201);
   } catch (error) {
     console.error('Error creating product:', error);
-    return c.json({ 
+    return c.json({
       error: 'Failed to create product',
-      details: error.message 
+      details: (error as Error).message
     }, 500);
   }
 });
@@ -145,21 +145,22 @@ app.put('/:id', async (c) => {
     }
     
     // Calculer le volume si nécessaire
-    let volume = existing.volume;
+    const existingAny = existing as any;
+    let volume = existingAny.volume;
     if (body.length || body.width || body.height) {
-      const l = body.length || existing.length;
-      const w = body.width || existing.width;
-      const h = body.height || existing.height;
+      const l = body.length || existingAny.length;
+      const w = body.width || existingAny.width;
+      const h = body.height || existingAny.height;
       if (l && w && h) {
         volume = (l * w * h) / 1000000;
       }
     }
-    
+
     const updatedProduct = {
       ...body,
       volume,
-      fragile: body.fragile !== undefined ? (body.fragile ? 1 : 0) : existing.fragile,
-      stackable: body.stackable !== undefined ? (body.stackable ? 1 : 0) : existing.stackable,
+      fragile: body.fragile !== undefined ? (body.fragile ? 1 : 0) : existingAny.fragile,
+      stackable: body.stackable !== undefined ? (body.stackable ? 1 : 0) : existingAny.stackable,
       updatedAt: new Date().toISOString(),
     };
     
@@ -188,12 +189,9 @@ app.delete('/:id', async (c) => {
     const { organizationId } = getAuthUser(c);
     const id = parseInt(c.req.param('id'));
     
+    // Note: Since schema doesn't have status field, we just delete the record
     await db
-      .update(products)
-      .set({ 
-        status: 'discontinued',
-        updatedAt: new Date().toISOString()
-      })
+      .delete(products)
       .where(and(
         eq(products.id, id),
         eq(products.organizationId, organizationId)

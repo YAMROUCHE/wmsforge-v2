@@ -36,7 +36,7 @@ app.get('/', async (c) => {
         SELECT name FROM users WHERE id = ?
       `).bind(userId).first();
 
-      const referralCode = generateReferralCode(user?.name || 'USER');
+      const referralCode = generateReferralCode((user as any)?.name || 'USER');
 
       const result = await c.env.DB.prepare(`
         INSERT INTO referrals (user_id, organization_id, referral_code, created_at, updated_at)

@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
+import './types'; // Load type definitions
 import auth from './routes/auth';
 import onboardingRouter from './routes/onboarding';
 import productsRouter from './routes/products';

@@ -18,7 +18,7 @@ app.get('/', async (c) => {
       LEFT JOIN operators o ON t.assigned_to = o.id
       WHERE t.organization_id = ?
     `;
-    const params = [1];
+    const params: any[] = [1];
 
     if (status) {
       query += ` AND t.status = ?`;

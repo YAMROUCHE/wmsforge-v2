@@ -58,7 +58,7 @@ app.post('/receive', async (c) => {
     return c.json({ message: 'Stock received successfully', quantity: body.quantity });
   } catch (error) {
     console.error('Error receiving stock:', error);
-    return c.json({ error: 'Failed to receive stock', details: error.message }, 500);
+    return c.json({ error: 'Failed to receive stock', details: (error as Error).message }, 500);
   }
 });
 

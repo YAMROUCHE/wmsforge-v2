@@ -104,7 +104,7 @@ export class SalesforceService extends IntegrationService {
       throw new Error('Failed to refresh access token');
     }
 
-    const data = await response.json();
+    const data = await response.json() as { access_token: string };
     this.config.access_token = data.access_token;
 
     // Update config in database
@@ -140,7 +140,7 @@ export class SalesforceService extends IntegrationService {
         throw new Error(`Salesforce API error: ${response.status}`);
       }
 
-      const data = await response.json();
+      const data = await response.json() as { records?: SalesforceOpportunity[] };
       const opportunities: SalesforceOpportunity[] = data.records || [];
 
       // Import chaque opportunity
@@ -218,7 +218,7 @@ export class SalesforceService extends IntegrationService {
         throw new Error(`Salesforce API error: ${response.status}`);
       }
 
-      const data = await response.json();
+      const data = await response.json() as { records?: SalesforceAccount[] };
       const accounts: SalesforceAccount[] = data.records || [];
 
       for (const account of accounts) {
