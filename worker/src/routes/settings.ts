@@ -152,6 +152,62 @@ app.put('/appearance', async (c) => {
 });
 
 /**
+ * Helper: Convert boolean to SQLite integer (1 or 0)
+ */
+function boolToInt(value: boolean): number {
+  return value ? 1 : 0;
+}
+
+/**
+ * Helper: Check if user preferences exist
+ */
+async function userPreferencesExist(db: D1Database, userId: number): Promise<boolean> {
+  const existing = await db.prepare(
+    'SELECT user_id FROM user_preferences WHERE user_id = ?'
+  ).bind(userId).first();
+  return !!existing;
+}
+
+/**
+ * Helper: Update notification preferences
+ */
+async function updateNotificationPreferences(
+  db: D1Database,
+  userId: number,
+  email: number,
+  orders: number,
+  inventory: number,
+  lowStock: number
+): Promise<void> {
+  await db.prepare(`
+    UPDATE user_preferences
+    SET notification_email = ?, notification_orders = ?,
+        notification_inventory = ?, notification_low_stock = ?,
+        updated_at = CURRENT_TIMESTAMP
+    WHERE user_id = ?
+  `).bind(email, orders, inventory, lowStock, userId).run();
+}
+
+/**
+ * Helper: Insert notification preferences
+ */
+async function insertNotificationPreferences(
+  db: D1Database,
+  userId: number,
+  email: number,
+  orders: number,
+  inventory: number,
+  lowStock: number
+): Promise<void> {
+  await db.prepare(`
+    INSERT INTO user_preferences (
+      user_id, notification_email, notification_orders,
+      notification_inventory, notification_low_stock
+    ) VALUES (?, ?, ?, ?, ?)
+  `).bind(userId, email, orders, inventory, lowStock).run();
+}
+
+/**
  * Helper: Upsert notification preferences for a user
  */
 async function upsertNotificationPreferences(
@@ -164,40 +220,50 @@ async function upsertNotificationPreferences(
     lowStockAlerts: boolean;
   }
 ): Promise<void> {
-  const existing = await db.prepare(
-    'SELECT user_id FROM user_preferences WHERE user_id = ?'
-  ).bind(userId).first();
+  const email = boolToInt(body.emailNotifications);
+  const orders = boolToInt(body.orderNotifications);
+  const inventory = boolToInt(body.inventoryAlerts);
+  const lowStock = boolToInt(body.lowStockAlerts);
 
-  if (existing) {
-    await db.prepare(`
-      UPDATE user_preferences
-      SET notification_email = ?,
-          notification_orders = ?,
-          notification_inventory = ?,
-          notification_low_stock = ?,
-          updated_at = CURRENT_TIMESTAMP
-      WHERE user_id = ?
-    `).bind(
-      body.emailNotifications ? 1 : 0,
-      body.orderNotifications ? 1 : 0,
-      body.inventoryAlerts ? 1 : 0,
-      body.lowStockAlerts ? 1 : 0,
-      userId
-    ).run();
+  if (await userPreferencesExist(db, userId)) {
+    await updateNotificationPreferences(db, userId, email, orders, inventory, lowStock);
   } else {
-    await db.prepare(`
-      INSERT INTO user_preferences (
-        user_id, notification_email, notification_orders,
-        notification_inventory, notification_low_stock
-      ) VALUES (?, ?, ?, ?, ?)
-    `).bind(
-      userId,
-      body.emailNotifications ? 1 : 0,
-      body.orderNotifications ? 1 : 0,
-      body.inventoryAlerts ? 1 : 0,
-      body.lowStockAlerts ? 1 : 0
-    ).run();
+    await insertNotificationPreferences(db, userId, email, orders, inventory, lowStock);
   }
+}
+
+/**
+ * Helper: Update appearance preferences
+ */
+async function updateAppearancePreferences(
+  db: D1Database,
+  userId: number,
+  theme: string,
+  language: string,
+  dateFormat: string
+): Promise<void> {
+  await db.prepare(`
+    UPDATE user_preferences
+    SET theme = ?, language = ?, date_format = ?, updated_at = CURRENT_TIMESTAMP
+    WHERE user_id = ?
+  `).bind(theme, language, dateFormat, userId).run();
+}
+
+/**
+ * Helper: Insert appearance preferences
+ */
+async function insertAppearancePreferences(
+  db: D1Database,
+  userId: number,
+  theme: string,
+  language: string,
+  dateFormat: string
+): Promise<void> {
+  await db.prepare(`
+    INSERT INTO user_preferences (
+      user_id, theme, language, date_format
+    ) VALUES (?, ?, ?, ?)
+  `).bind(userId, theme, language, dateFormat).run();
 }
 
 /**
@@ -212,32 +278,10 @@ async function upsertAppearancePreferences(
     dateFormat: string;
   }
 ): Promise<void> {
-  const existing = await db.prepare(
-    'SELECT user_id FROM user_preferences WHERE user_id = ?'
-  ).bind(userId).first();
-
-  if (existing) {
-    await db.prepare(`
-      UPDATE user_preferences
-      SET theme = ?, language = ?, date_format = ?, updated_at = CURRENT_TIMESTAMP
-      WHERE user_id = ?
-    `).bind(
-      body.theme,
-      body.language,
-      body.dateFormat,
-      userId
-    ).run();
+  if (await userPreferencesExist(db, userId)) {
+    await updateAppearancePreferences(db, userId, body.theme, body.language, body.dateFormat);
   } else {
-    await db.prepare(`
-      INSERT INTO user_preferences (
-        user_id, theme, language, date_format
-      ) VALUES (?, ?, ?, ?)
-    `).bind(
-      userId,
-      body.theme,
-      body.language,
-      body.dateFormat
-    ).run();
+    await insertAppearancePreferences(db, userId, body.theme, body.language, body.dateFormat);
   }
 }
 

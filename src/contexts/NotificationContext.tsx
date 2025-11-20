@@ -27,26 +27,43 @@ interface NotificationContextType {
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
+/**
+ * Helper: Generate unique notification ID
+ */
+function generateNotificationId(): string {
+  return `notif-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+}
+
+/**
+ * Helper: Schedule auto-removal of notification
+ */
+function scheduleAutoRemoval(
+  notificationId: string,
+  removeCallback: (id: string) => void
+): void {
+  setTimeout(() => removeCallback(notificationId), 10000);
+}
+
 export function NotificationProvider({ children }: { children: ReactNode }) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
+
+  const removeNotificationById = useCallback((id: string) => {
+    setNotifications(prev => prev.filter(n => n.id !== id));
+  }, []);
 
   const addNotification = useCallback((
     notification: Omit<Notification, 'id' | 'timestamp' | 'read'>
   ) => {
     const newNotification: Notification = {
       ...notification,
-      id: `notif-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: generateNotificationId(),
       timestamp: new Date(),
       read: false
     };
 
     setNotifications(prev => [newNotification, ...prev]);
-
-    // Auto-remove après 10 secondes pour les toasts
-    setTimeout(() => {
-      setNotifications(prev => prev.filter(n => n.id !== newNotification.id));
-    }, 10000);
-  }, []);
+    scheduleAutoRemoval(newNotification.id, removeNotificationById);
+  }, [removeNotificationById]);
 
   const markAsRead = useCallback((id: string) => {
     setNotifications(prev =>
