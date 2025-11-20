@@ -186,87 +186,130 @@ export default function WarehouseEditor({ initialLayout, onSave }: WarehouseEdit
     }
   };
 
+  // Helper: Calculate canvas drop position
+  const calculateCanvasDropPosition = useCallback((event: DragEndEvent): { x: number; y: number } => {
+    const canvasElement = document.querySelector('[data-canvas="true"]');
+    if (!canvasElement) return { x: 0, y: 0 };
+
+    const rect = canvasElement.getBoundingClientRect();
+    const pointerEvent = event.activatorEvent as PointerEvent;
+
+    return {
+      x: (pointerEvent.clientX - rect.left) / zoom,
+      y: (pointerEvent.clientY - rect.top) / zoom,
+    };
+  }, [zoom]);
+
+  // Helper: Validate and get drop target
+  interface DropTarget {
+    valid: boolean;
+    parentId: string | null;
+    x: number;
+    y: number;
+  }
+
+  const validateAndGetDropTarget = useCallback((
+    overId: any,
+    type: ComponentType,
+    event: DragEndEvent
+  ): DropTarget => {
+    if (overId !== 'canvas') {
+      const parent = components.find(c => c.id === overId);
+      if (parent && canBeChildOf(type, parent.type)) {
+        return {
+          valid: true,
+          parentId: parent.id,
+          x: parent.position.x + 20,
+          y: parent.position.y + 20,
+        };
+      }
+      return { valid: false, parentId: null, x: 0, y: 0 };
+    }
+
+    const pos = calculateCanvasDropPosition(event);
+    return { valid: true, parentId: null, x: pos.x, y: pos.y };
+  }, [components, calculateCanvasDropPosition]);
+
+  // Helper: Handle palette drop
+  const handlePaletteDrop = useCallback((
+    type: ComponentType,
+    overId: any,
+    event: DragEndEvent
+  ) => {
+    const dropTarget = validateAndGetDropTarget(overId, type, event);
+    if (!dropTarget.valid) {
+      setSelectedType(null);
+      return;
+    }
+
+    const newComponent = createComponent(type, dropTarget.x, dropTarget.y, dropTarget.parentId);
+    const newComponents = [...components, newComponent];
+    setComponents(newComponents);
+    saveToHistory(newComponents);
+    setSelectedType(null);
+    setSelectedId(newComponent.id);
+  }, [components, validateAndGetDropTarget, saveToHistory]);
+
+  // Helper: Update component position
+  const updateComponentPosition = useCallback((
+    componentId: string,
+    newParentId: string | null,
+    delta: { x: number; y: number }
+  ) => {
+    const newComponents = components.map(c => {
+      if (c.id === componentId) {
+        return {
+          ...c,
+          position: {
+            x: snapToGrid(c.position.x + delta.x / zoom),
+            y: snapToGrid(c.position.y + delta.y / zoom),
+          },
+          parentId: newParentId,
+        };
+      }
+      return c;
+    });
+    setComponents(newComponents);
+    saveToHistory(newComponents);
+  }, [components, zoom, saveToHistory]);
+
+  // Helper: Handle existing component drop
+  const handleExistingComponentDrop = useCallback((
+    componentId: string,
+    overId: any,
+    delta: { x: number; y: number }
+  ) => {
+    const component = components.find(c => c.id === componentId);
+    if (!component) return;
+
+    let newParentId = component.parentId;
+    if (overId !== 'canvas' && overId !== componentId) {
+      const parent = components.find(c => c.id === overId);
+      if (parent && canBeChildOf(component.type, parent.type)) {
+        newParentId = parent.id;
+      }
+    }
+
+    updateComponentPosition(componentId, newParentId, delta);
+  }, [components, updateComponentPosition]);
+
   // Drag end
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over, delta } = event;
-    
+
     setDraggedComponent(null);
-    
+
     if (!over) {
       setSelectedType(null);
       return;
     }
 
-    // Drag depuis la palette
     if (typeof active.id === 'string' && active.id.startsWith('palette-')) {
       const type = active.id.replace('palette-', '') as ComponentType;
-      
-      // Vérifier si on drop sur un parent compatible
-      let parentId: string | null = null;
-      let x = 0;
-      let y = 0;
-      
-      if (over.id !== 'canvas') {
-        const parent = components.find(c => c.id === over.id);
-        if (parent && canBeChildOf(type, parent.type)) {
-          parentId = parent.id;
-          // Position relative au parent
-          x = parent.position.x + 20;
-          y = parent.position.y + 20;
-        } else {
-          // Drop invalide
-          setSelectedType(null);
-          return;
-        }
-      } else {
-        // Drop sur le canvas - calculer la position
-        const canvasElement = document.querySelector('[data-canvas="true"]');
-        if (!canvasElement) return;
-        
-        const rect = canvasElement.getBoundingClientRect();
-        const pointerEvent = event.activatorEvent as PointerEvent;
-        x = (pointerEvent.clientX - rect.left) / zoom;
-        y = (pointerEvent.clientY - rect.top) / zoom;
-      }
-
-      const newComponent = createComponent(type, x, y, parentId);
-      const newComponents = [...components, newComponent];
-      setComponents(newComponents);
-      saveToHistory(newComponents);
-      setSelectedType(null);
-      setSelectedId(newComponent.id);
-      
+      handlePaletteDrop(type, over.id, event);
     } else {
-      // Déplacer un composant existant
       const componentId = active.id as string;
-      const component = components.find(c => c.id === componentId);
-      
-      if (component) {
-        // Vérifier si on drop sur un parent compatible
-        let newParentId = component.parentId;
-        if (over.id !== 'canvas' && over.id !== componentId) {
-          const parent = components.find(c => c.id === over.id);
-          if (parent && canBeChildOf(component.type, parent.type)) {
-            newParentId = parent.id;
-          }
-        }
-
-        const newComponents = components.map(c => {
-          if (c.id === componentId) {
-            return {
-              ...c,
-              position: {
-                x: snapToGrid(c.position.x + delta.x / zoom),
-                y: snapToGrid(c.position.y + delta.y / zoom),
-              },
-              parentId: newParentId,
-            };
-          }
-          return c;
-        });
-        setComponents(newComponents);
-        saveToHistory(newComponents);
-      }
+      handleExistingComponentDrop(componentId, over.id, delta);
     }
   };
 
