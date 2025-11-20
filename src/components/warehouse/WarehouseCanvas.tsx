@@ -20,6 +20,19 @@ interface WarehouseCanvasProps {
   overId: string | null;
 }
 
+function getComponentTypeLabel(type: ComponentType): string {
+  const labels: Record<ComponentType, string> = {
+    warehouse: 'Entrepôt',
+    zone: 'Zone',
+    aisle: 'Allée',
+    level: 'Niveau',
+    rack: 'Rack',
+    location: 'Emplacement',
+    pallet: 'Palette',
+  };
+  return labels[type];
+}
+
 export default function WarehouseCanvas({
   components,
   selectedId,
@@ -114,15 +127,7 @@ export default function WarehouseCanvas({
             {/* Cursor indicator when a type is selected */}
             {selectedType && (
               <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg text-sm font-medium">
-                Glissez ou cliquez pour placer : {
-                  selectedType === 'warehouse' ? 'Entrepôt' :
-                  selectedType === 'zone' ? 'Zone' :
-                  selectedType === 'aisle' ? 'Allée' :
-                  selectedType === 'level' ? 'Niveau' :
-                  selectedType === 'rack' ? 'Rack' :
-                  selectedType === 'location' ? 'Emplacement' :
-                  'Palette'
-                }
+                Glissez ou cliquez pour placer : {getComponentTypeLabel(selectedType)}
               </div>
             )}
 
