@@ -44,11 +44,11 @@ http_request() {
     local data=$3
     local auth_header=""
     
-    if [ ! -z "$TOKEN" ]; then
+    if [[ -n "$TOKEN" ]]; then
         auth_header="-H \"Authorization: Bearer $TOKEN\""
     fi
-    
-    if [ -z "$data" ]; then
+
+    if [[ -z "$data" ]]; then
         eval curl -s -X "$method" "$API_URL$endpoint" $auth_header
     else
         eval curl -s -X "$method" "$API_URL$endpoint" $auth_header \

@@ -33,7 +33,7 @@ echo ""
 
 # 3. Vérifier node_modules
 echo "3️⃣  Vérification des dépendances..."
-if [ -d "node_modules" ]; then
+if [[ -d "node_modules" ]]; then
     echo "   ✅ node_modules existe"
 else
     echo "   ❌ node_modules manquant - Exécuter: npm install"
@@ -53,7 +53,7 @@ EXPECTED_MIGRATIONS=(
 
 MISSING_MIGRATIONS=0
 for migration in "${EXPECTED_MIGRATIONS[@]}"; do
-    if [ -f "drizzle/migrations/$migration" ]; then
+    if [[ -f "drizzle/migrations/$migration" ]]; then
         echo "   ✅ $migration"
     else
         echo "   ❌ $migration manquant"
@@ -61,7 +61,7 @@ for migration in "${EXPECTED_MIGRATIONS[@]}"; do
     fi
 done
 
-if [ $MISSING_MIGRATIONS -eq 0 ]; then
+if [[ $MISSING_MIGRATIONS -eq 0 ]]; then
     echo "   ✅ Toutes les migrations présentes"
 else
     echo "   ❌ $MISSING_MIGRATIONS migration(s) manquante(s)"
@@ -71,13 +71,13 @@ echo ""
 
 # 5. Vérifier la base de données
 echo "5️⃣  Vérification de la base de données..."
-if [ -f ".wrangler/state/v3/d1/miniflare-D1DatabaseObject/4f114494537e4c318271079f3ee49dfed.sqlite" ]; then
+if [[ -f ".wrangler/state/v3/d1/miniflare-D1DatabaseObject/4f114494537e4c318271079f3ee49dfed.sqlite" ]]; then
     echo "   ✅ Base de données locale existe"
 
     # Vérifier les tables critiques
     TABLES=$(npx wrangler d1 execute wmsforge-db --local --command="SELECT COUNT(*) as count FROM sqlite_master WHERE type='table';" 2>/dev/null | grep -o '"count":[0-9]*' | grep -o '[0-9]*')
 
-    if [ ! -z "$TABLES" ] && [ "$TABLES" -gt 20 ]; then
+    if [[ -n "$TABLES" && "$TABLES" -gt 20 ]]; then
         echo "   ✅ Base de données initialisée ($TABLES tables)"
     else
         echo "   ⚠️  Base de données existe mais semble vide"
@@ -99,7 +99,7 @@ CONFIG_FILES=(
 )
 
 for file in "${CONFIG_FILES[@]}"; do
-    if [ -f "$file" ]; then
+    if [[ -f "$file" ]]; then
         echo "   ✅ $file"
     else
         echo "   ❌ $file manquant"
@@ -122,7 +122,7 @@ CRITICAL_FILES=(
 
 MISSING_FILES=0
 for file in "${CRITICAL_FILES[@]}"; do
-    if [ -f "$file" ]; then
+    if [[ -f "$file" ]]; then
         echo "   ✅ $file"
     else
         echo "   ❌ $file manquant"
@@ -130,7 +130,7 @@ for file in "${CRITICAL_FILES[@]}"; do
     fi
 done
 
-if [ $MISSING_FILES -gt 0 ]; then
+if [[ $MISSING_FILES -gt 0 ]]; then
     ERRORS=$((ERRORS+1))
 fi
 echo ""
@@ -145,7 +145,7 @@ TEST_DOCS=(
 )
 
 for doc in "${TEST_DOCS[@]}"; do
-    if [ -f "$doc" ]; then
+    if [[ -f "$doc" ]]; then
         echo "   ✅ $doc"
     else
         echo "   ⚠️  $doc manquant"
@@ -177,7 +177,7 @@ echo ""
 
 # Résumé final
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-if [ $ERRORS -eq 0 ]; then
+if [[ $ERRORS -eq 0 ]]; then
     echo "✅ ENVIRONNEMENT PRÊT POUR LES TESTS"
     echo ""
     echo "📋 Prochaines étapes:"
