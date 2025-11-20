@@ -43,85 +43,102 @@ const WAREHOUSE_TEMPLATES = {
   },
 };
 
+// Helper: Créer les zones d'entrepôt
+async function createWarehouseZones(db: D1Database, organizationId: number, zones: Array<{code: string, name: string, type: string}>) {
+  for (const zone of zones) {
+    await db.prepare(`
+      INSERT INTO locations (organization_id, code, name, type, parent_id, capacity)
+      VALUES (?, ?, ?, ?, NULL, NULL)
+    `).bind(organizationId, zone.code, zone.name, zone.type).run();
+  }
+}
+
+// Helper: Créer les emplacements de stockage
+async function createStorageLocations(db: D1Database, organizationId: number, maxLocations: number) {
+  const storageZone = await db.prepare(`
+    SELECT id FROM locations
+    WHERE organization_id = ? AND code LIKE 'STG%'
+    LIMIT 1
+  `).bind(organizationId).first();
+
+  if (!storageZone) return null;
+
+  const locationsToCreate = Math.min(maxLocations, 50);
+  for (let i = 1; i <= locationsToCreate; i++) {
+    const aisle = String.fromCharCode(65 + Math.floor((i - 1) / 10));
+    const position = ((i - 1) % 10) + 1;
+    const level = Math.floor(Math.random() * 4) + 1;
+    const code = `${aisle}${position.toString().padStart(2, '0')}-${level}`;
+
+    await db.prepare(`
+      INSERT INTO locations (organization_id, code, name, type, parent_id, capacity)
+      VALUES (?, ?, ?, 'location', ?, 1)
+    `).bind(organizationId, code, `Emplacement ${code}`, storageZone.id).run();
+  }
+
+  return storageZone.id;
+}
+
+// Helper: Créer un produit de démo
+async function createDemoProduct(db: D1Database, organizationId: number, product: any) {
+  if (!product || !product.name) return null;
+
+  const sku = product.sku || `PROD-${Date.now().toString().slice(-6)}`;
+  await db.prepare(`
+    INSERT INTO products (organization_id, sku, name, description, category, unit_price, reorder_point)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `).bind(
+    organizationId,
+    sku,
+    product.name,
+    product.description || `Produit de démonstration`,
+    product.category || 'Général',
+    product.price || 0,
+    product.reorderPoint || 10
+  ).run();
+
+  return sku;
+}
+
+// Helper: Ajouter du stock initial
+async function addInitialStock(db: D1Database, organizationId: number, storageZoneId: number, sku: string, quantity: number) {
+  const firstLocation = await db.prepare(`
+    SELECT id FROM locations
+    WHERE organization_id = ? AND type = 'location' AND parent_id = ?
+    LIMIT 1
+  `).bind(organizationId, storageZoneId).first();
+
+  if (!firstLocation) return;
+
+  const productResult = await db.prepare(`
+    SELECT id FROM products WHERE organization_id = ? AND sku = ?
+  `).bind(organizationId, sku).first();
+
+  if (!productResult) return;
+
+  await db.prepare(`
+    INSERT INTO inventory (organization_id, product_id, location_id, quantity)
+    VALUES (?, ?, ?, ?)
+  `).bind(organizationId, productResult.id, firstLocation.id, quantity).run();
+}
+
 // POST /api/onboarding/complete - Compléter l'onboarding avec template
 onboardingRouter.post('/complete', async (c) => {
   try {
     const body = await c.req.json();
     const { template, companyName, product } = body;
-
-    // Organisation ID = 1 pour simplifier (multi-tenant viendra plus tard)
     const organizationId = 1;
 
-    // 1. Récupérer le template choisi
     const warehouseTemplate = WAREHOUSE_TEMPLATES[template as keyof typeof WAREHOUSE_TEMPLATES] || WAREHOUSE_TEMPLATES.medium;
 
-    // 2. Créer les zones principales
-    for (const zone of warehouseTemplate.zones) {
-      await c.env.DB.prepare(`
-        INSERT INTO locations (organization_id, code, name, type, parent_id, capacity)
-        VALUES (?, ?, ?, ?, NULL, NULL)
-      `).bind(organizationId, zone.code, zone.name, zone.type).run();
-    }
+    await createWarehouseZones(c.env.DB, organizationId, warehouseTemplate.zones);
 
-    // 3. Créer des emplacements de stockage dans la première zone de stockage
-    const storageZone = await c.env.DB.prepare(`
-      SELECT id FROM locations
-      WHERE organization_id = ? AND code LIKE 'STG%'
-      LIMIT 1
-    `).bind(organizationId).first();
+    const storageZoneId = await createStorageLocations(c.env.DB, organizationId, warehouseTemplate.locations);
 
-    if (storageZone) {
-      const locationsToCreate = Math.min(warehouseTemplate.locations, 50); // Max 50 pour démo
-      for (let i = 1; i <= locationsToCreate; i++) {
-        const aisle = String.fromCharCode(65 + Math.floor((i - 1) / 10)); // A, B, C...
-        const position = ((i - 1) % 10) + 1;
-        const level = Math.floor(Math.random() * 4) + 1;
-        const code = `${aisle}${position.toString().padStart(2, '0')}-${level}`;
+    const sku = await createDemoProduct(c.env.DB, organizationId, product);
 
-        await c.env.DB.prepare(`
-          INSERT INTO locations (organization_id, code, name, type, parent_id, capacity)
-          VALUES (?, ?, ?, 'location', ?, 1)
-        `).bind(organizationId, code, `Emplacement ${code}`, storageZone.id).run();
-      }
-    }
-
-    // 4. Créer un produit de démo si fourni
-    if (product && product.name) {
-      const sku = product.sku || `PROD-${Date.now().toString().slice(-6)}`;
-      await c.env.DB.prepare(`
-        INSERT INTO products (organization_id, sku, name, description, category, unit_price, reorder_point)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-      `).bind(
-        organizationId,
-        sku,
-        product.name,
-        product.description || `Produit de démonstration`,
-        product.category || 'Général',
-        product.price || 0,
-        product.reorderPoint || 10
-      ).run();
-
-      // Ajouter du stock initial si un emplacement existe
-      if (storageZone) {
-        const firstLocation = await c.env.DB.prepare(`
-          SELECT id FROM locations
-          WHERE organization_id = ? AND type = 'location' AND parent_id = ?
-          LIMIT 1
-        `).bind(organizationId, storageZone.id).first();
-
-        if (firstLocation) {
-          const productResult = await c.env.DB.prepare(`
-            SELECT id FROM products WHERE organization_id = ? AND sku = ?
-          `).bind(organizationId, sku).first();
-
-          if (productResult) {
-            await c.env.DB.prepare(`
-              INSERT INTO inventory (organization_id, product_id, location_id, quantity)
-              VALUES (?, ?, ?, ?)
-            `).bind(organizationId, productResult.id, firstLocation.id, product.quantity || 100).run();
-          }
-        }
-      }
+    if (sku && storageZoneId) {
+      await addInitialStock(c.env.DB, organizationId, storageZoneId, sku, product?.quantity || 100);
     }
 
     return c.json({
