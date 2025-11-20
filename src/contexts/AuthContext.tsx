@@ -4,7 +4,7 @@
 // Ce fichier crée un "système d'interphone" pour partager
 // les informations de connexion dans toute l'application
 
-import { createContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useState, useEffect, useMemo, ReactNode } from 'react';
 import { User, api, ApiError } from '../lib/api';
 
 // ============================================
@@ -199,16 +199,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // VALEUR DU CONTEXT
   // ============================================
   // Toutes les données et fonctions qu'on veut partager
-  
-  const value: AuthContextType = {
-    user,
-    isLoading,
-    isAuthenticated: user !== null,  // True si user existe
-    login,
-    register,
-    logout,
-    refreshUser,
-  };
+
+  const value: AuthContextType = useMemo(
+    () => ({
+      user,
+      isLoading,
+      isAuthenticated: user !== null,  // True si user existe
+      login,
+      register,
+      logout,
+      refreshUser,
+    }),
+    [user, isLoading, login, register, logout, refreshUser]
+  );
 
   // ============================================
   // RENDU
