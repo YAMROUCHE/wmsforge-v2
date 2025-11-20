@@ -249,8 +249,17 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8">
           {/* Produits en stock */}
           <div
+            role="button"
+            tabIndex={0}
             onClick={() => navigate('/products')}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                navigate('/products');
+              }
+            }}
             className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md dark:hover:shadow-gray-700/50 transition-all cursor-pointer"
+            aria-label="Voir les produits en stock"
           >
             <div className="flex items-center justify-between mb-4">
               <div className="bg-blue-500 p-3 rounded-lg">
@@ -267,8 +276,17 @@ export default function Dashboard() {
 
           {/* Commandes en attente */}
           <div
+            role="button"
+            tabIndex={0}
             onClick={() => navigate('/orders')}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                navigate('/orders');
+              }
+            }}
             className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md dark:hover:shadow-gray-700/50 transition-all cursor-pointer"
+            aria-label="Voir les commandes"
           >
             <div className="flex items-center justify-between mb-4">
               <div className="bg-purple-500 p-3 rounded-lg">
@@ -290,8 +308,17 @@ export default function Dashboard() {
 
           {/* Mouvements de stock */}
           <div
+            role="button"
+            tabIndex={0}
             onClick={() => navigate('/inventory')}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                navigate('/inventory');
+              }
+            }}
             className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md dark:hover:shadow-gray-700/50 transition-all cursor-pointer"
+            aria-label="Voir les mouvements de stock"
           >
             <div className="flex items-center justify-between mb-4">
               <div className="bg-green-500 p-3 rounded-lg">
@@ -308,8 +335,17 @@ export default function Dashboard() {
 
           {/* Alertes stock faible */}
           <div
+            role="button"
+            tabIndex={0}
             onClick={() => navigate('/inventory')}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                navigate('/inventory');
+              }
+            }}
             className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md dark:hover:shadow-gray-700/50 transition-all cursor-pointer"
+            aria-label="Voir les alertes de stock faible"
           >
             <div className="flex items-center justify-between mb-4">
               <div className="bg-red-500 p-3 rounded-lg">

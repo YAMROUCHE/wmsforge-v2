@@ -173,8 +173,18 @@ export default function WaveManagementPanel({
               className={`${colors.bg} ${colors.border} border-l-4 transition-all`}
             >
               <div
+                role="button"
+                tabIndex={0}
                 className="p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
                 onClick={() => setSelectedWave(isExpanded ? null : wave.id)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setSelectedWave(isExpanded ? null : wave.id);
+                  }
+                }}
+                aria-label={`${isExpanded ? 'Réduire' : 'Développer'} les détails de ${wave.name}`}
+                aria-expanded={isExpanded}
               >
                 <div className="flex items-start justify-between">
                   {/* Infos principales */}

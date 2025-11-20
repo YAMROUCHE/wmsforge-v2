@@ -88,9 +88,11 @@ export default function NotificationCenter({ isOpen, onClose }: NotificationCent
   return (
     <>
       {/* Backdrop */}
-      <div
+      <button
+        type="button"
         className="fixed inset-0 bg-black/50 z-40 backdrop-blur-sm"
         onClick={onClose}
+        aria-label="Fermer le panneau de notifications"
       />
 
       {/* Panel */}
@@ -143,12 +145,21 @@ export default function NotificationCenter({ isOpen, onClose }: NotificationCent
                 return (
                   <div
                     key={notification.id}
+                    role="button"
+                    tabIndex={0}
                     onClick={() => handleNotificationClick(notification)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleNotificationClick(notification);
+                      }
+                    }}
                     className={`${colors.bg} ${colors.border} border rounded-lg p-4 transition-all ${
                       notification.read
                         ? 'opacity-60'
                         : 'shadow-md hover:shadow-lg'
                     } ${notification.action ? 'cursor-pointer' : ''}`}
+                    aria-label={`Notification: ${notification.title}`}
                   >
                     <div className="flex items-start gap-3">
                       <Icon className={`w-5 h-5 ${colors.icon} flex-shrink-0 mt-0.5`} />

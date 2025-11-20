@@ -49,14 +49,19 @@ function AppRoutes() {
   // Public routes without sidebar
   const isPublicRoute = location.pathname === '/' || location.pathname === '/auth';
 
+  // Calculate main content classes
+  const getMainClasses = () => {
+    if (isPublicRoute) {
+      return 'flex-1 transition-all duration-300';
+    }
+    const marginClass = isCollapsed ? 'ml-16' : 'ml-60';
+    return `flex-1 transition-all duration-300 bg-gray-50 dark:bg-gray-950 min-h-screen ${marginClass}`;
+  };
+
   return (
     <div className="flex">
       {!isPublicRoute && <Sidebar />}
-      <main className={`flex-1 transition-all duration-300 ${
-        isPublicRoute
-          ? ''
-          : 'bg-gray-50 dark:bg-gray-950 min-h-screen ' + (isCollapsed ? 'ml-16' : 'ml-60')
-      }`}>
+      <main className={getMainClasses()}>
         <Suspense
           fallback={
             <div className="flex items-center justify-center h-screen">
