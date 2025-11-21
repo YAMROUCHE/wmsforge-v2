@@ -173,7 +173,16 @@ export default function WarehouseDashboard() {
             {zonesData.map((zone) => (
               <div
                 key={zone.id}
+                role="button"
+                tabIndex={0}
                 onClick={() => setSelectedZone(zone.id)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setSelectedZone(zone.id);
+                  }
+                }}
+                aria-label={`Sélectionner la zone ${zone.name}`}
                 className={`
                   relative p-4 rounded-lg border-2 cursor-pointer transition-all
                   ${ZONE_COLORS[zone.category]}
@@ -204,9 +213,11 @@ export default function WarehouseDashboard() {
         {selectedZoneData && (
           <>
             {/* Overlay */}
-            <div 
+            <button
+              type="button"
               className="fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity"
               onClick={() => setSelectedZone(null)}
+              aria-label="Fermer les détails de la zone"
             />
             
             {/* Drawer Panel */}
