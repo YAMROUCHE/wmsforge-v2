@@ -6,6 +6,7 @@
 
 import { createContext, useState, useEffect, useMemo, ReactNode } from 'react';
 import { User, api, ApiError } from '../lib/api';
+import { logger } from '@/lib/logger';
 
 // ============================================
 // TYPES TYPESCRIPT
@@ -80,7 +81,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setUser(userData);
       } catch (error) {
         // Si le token est invalide ou expiré, on le supprime
-        console.error('Token invalide:', error);
+        logger.error('Token invalide:', error);
         api.removeToken();
         setUser(null);
       } finally {
@@ -167,9 +168,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       
       // Réinitialiser l'état utilisateur
       setUser(null);
-      
+
     } catch (error) {
-      console.error('Erreur lors de la déconnexion:', error);
+      logger.error('Erreur lors de la déconnexion:', error);
       throw error;
     }
   };
@@ -185,7 +186,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const userData = await api.getCurrentUser();
       setUser(userData);
     } catch (error) {
-      console.error('Erreur lors du rafraîchissement:', error);
+      logger.error('Erreur lors du rafraîchissement:', error);
       // Si l'erreur est 401 (non autorisé), déconnecter l'utilisateur
       if (error instanceof ApiError && error.status === 401) {
         api.removeToken();

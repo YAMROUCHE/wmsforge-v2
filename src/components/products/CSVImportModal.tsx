@@ -2,12 +2,14 @@ import { useState } from 'react';
 import { X, Upload, Download, CheckCircle, XCircle } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { importProductsCSV, type CreateProductData } from '../../lib/api';
+import { useNotifications } from '@/contexts/NotificationContext';
 
 interface CSVImportModalProps {
   onClose: () => void;
 }
 
 export default function CSVImportModal({ onClose }: CSVImportModalProps) {
+  const { addNotification } = useNotifications();
   const [file, setFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<{
@@ -22,7 +24,11 @@ export default function CSVImportModal({ onClose }: CSVImportModalProps) {
       setFile(selectedFile);
       setResult(null);
     } else {
-      alert('Veuillez sélectionner un fichier CSV');
+      addNotification({
+        type: 'warning',
+        title: 'Fichier invalide',
+        message: 'Veuillez sélectionner un fichier CSV'
+      });
     }
   };
 
@@ -35,15 +41,15 @@ export default function CSVImportModal({ onClose }: CSVImportModalProps) {
     try {
       const text = await file.text();
       const lines = text.split('\n').filter(line => line.trim());
-      
+
       // Ignorer la première ligne (headers)
       const dataLines = lines.slice(1);
-      
+
       const products: CreateProductData[] = dataLines.map(line => {
         const [sku, name, description, category, unitPrice, reorderPoint] = line
           .split(',')
           .map(field => field.trim());
-        
+
         return {
           sku,
           name,
@@ -63,7 +69,11 @@ export default function CSVImportModal({ onClose }: CSVImportModalProps) {
         }, 3000);
       }
     } catch (error: any) {
-      alert(error.message || 'Erreur lors de l\'import');
+      addNotification({
+        type: 'error',
+        title: 'Erreur d\'import',
+        message: error.message || 'Erreur lors de l\'import'
+      });
     } finally {
       setIsLoading(false);
     }

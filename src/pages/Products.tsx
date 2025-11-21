@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Plus, Search, Upload, Edit, Trash2, Package, Filter } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import ExportButton from '../components/ExportButton';
+import { logger } from '@/lib/logger';
+import { useNotifications } from '@/contexts/NotificationContext';
 
 interface Product {
   id: number;
@@ -20,6 +22,7 @@ interface Product {
 }
 
 export default function Products() {
+  const { addNotification } = useNotifications();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -67,7 +70,7 @@ export default function Products() {
       const data = await response.json();
       setProducts(data.items || []);
     } catch (error) {
-      console.error('Erreur chargement produits:', error);
+      logger.error('Erreur chargement produits:', error);
       // Données de test si l'API ne répond pas
       setProducts([
         { id: 1, sku: 'SKU-001', name: 'iPhone 15 Pro', category: 'Electronics', price: 1299, abcClass: 'A', status: 'active', minStock: 5 },
@@ -105,7 +108,7 @@ export default function Products() {
         resetForm();
       }
     } catch (error) {
-      console.error('Erreur sauvegarde produit:', error);
+      logger.error('Erreur sauvegarde produit:', error);
     }
   };
 
@@ -127,7 +130,11 @@ export default function Products() {
 
   const handleImportCSV = () => {
     // TODO: Implémenter l'import CSV
-    alert('Import CSV à venir...');
+    addNotification({
+      type: 'info',
+      title: 'Import CSV',
+      message: 'Import CSV à venir...'
+    });
   };
 
   // Filtrer les produits

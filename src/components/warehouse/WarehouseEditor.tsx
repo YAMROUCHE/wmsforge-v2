@@ -7,6 +7,7 @@ import HierarchyPanel from './HierarchyPanel';
 import BreadcrumbNav from './BreadcrumbNav';
 import type { WarehouseComponent, ComponentType, WarehouseLayout } from '../../lib/warehouse';
 import { generateId, snapToGrid, ZONE_COLORS, DEFAULT_SIZES, canBeChildOf, getDepth, generateCode, HIERARCHY_RULES } from '../../lib/warehouse';
+import { useNotifications } from '@/contexts/NotificationContext';
 
 interface WarehouseEditorProps {
   initialLayout?: WarehouseLayout;
@@ -15,6 +16,7 @@ interface WarehouseEditorProps {
 
 export default function WarehouseEditor({ initialLayout, onSave }: WarehouseEditorProps) {
   // State
+  const { addNotification } = useNotifications();
   const [components, setComponents] = useState<WarehouseComponent[]>(
     initialLayout?.components || []
   );
@@ -411,13 +413,17 @@ export default function WarehouseEditor({ initialLayout, onSave }: WarehouseEdit
           setSelectedId(null);
           setSelectedType(null);
         } catch (error) {
-          alert('Erreur lors de l\'import du fichier');
+          addNotification({
+            type: 'error',
+            title: 'Erreur d\'import',
+            message: 'Erreur lors de l\'import du fichier'
+          });
         }
       };
       reader.readAsText(file);
     };
     input.click();
-  }, [saveToHistory]);
+  }, [saveToHistory, addNotification]);
 
   // Save
   const handleSave = useCallback(() => {

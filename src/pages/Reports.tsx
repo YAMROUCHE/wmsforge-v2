@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { BarChart3, TrendingUp, Package, ShoppingCart, MapPin, Download } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { useAnalytics, useAnalyticsByPeriod } from '../hooks/useAnalytics';
+import { useNotifications } from '@/contexts/NotificationContext';
 import {
   LineChart,
   Line,
@@ -21,6 +22,7 @@ import {
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444'];
 
 export default function Reports() {
+  const { addNotification } = useNotifications();
   const [dateRange, setDateRange] = useState('30');
 
   const { data: analytics, isLoading } = useAnalytics();
@@ -30,7 +32,11 @@ export default function Reports() {
     if (format === 'csv') {
       exportToCSV();
     } else {
-      alert('Export PDF en cours de développement...');
+      addNotification({
+        type: 'info',
+        title: 'Export PDF',
+        message: 'Export PDF en cours de développement...'
+      });
     }
   };
 

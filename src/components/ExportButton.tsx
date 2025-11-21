@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Download, FileDown, Loader2 } from 'lucide-react';
 import { quickExport, exportConfigs } from '../utils/exportData';
+import { logger } from '@/lib/logger';
+import { useNotifications } from '@/contexts/NotificationContext';
 
 interface ExportButtonProps {
   type: keyof typeof exportConfigs;
@@ -19,11 +21,16 @@ export default function ExportButton({
   disabled = false,
   className = ''
 }: ExportButtonProps) {
+  const { addNotification } = useNotifications();
   const [exporting, setExporting] = useState(false);
 
   const handleExport = async () => {
     if (data.length === 0) {
-      alert('Aucune donnée à exporter');
+      addNotification({
+        type: 'warning',
+        title: 'Aucune donnée',
+        message: 'Aucune donnée à exporter'
+      });
       return;
     }
 
@@ -35,8 +42,12 @@ export default function ExportButton({
 
       quickExport(type, data);
     } catch (error) {
-      console.error('Erreur export:', error);
-      alert('Erreur lors de l\'export');
+      logger.error('Erreur export:', error);
+      addNotification({
+        type: 'error',
+        title: 'Erreur d\'export',
+        message: 'Erreur lors de l\'export'
+      });
     } finally {
       setExporting(false);
     }

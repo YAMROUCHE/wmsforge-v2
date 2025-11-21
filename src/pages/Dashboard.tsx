@@ -10,6 +10,7 @@ import { locationOptimizer, LocationOptimization } from '../utils/locationOptimi
 import { orderPatternsAnalyzer, OrderPattern, ProductAssociation } from '../utils/orderPatternsAnalyzer';
 import { useNotifications } from '../contexts/NotificationContext';
 import ReviewPrompt from '../components/ReviewPrompt';
+import { logger } from '@/lib/logger';
 
 interface DashboardStats {
   totalProducts: number;
@@ -150,7 +151,7 @@ export default function Dashboard() {
       setOrderPatterns(patternsResult.patterns);
       setProductAssociations(patternsResult.associations);
     } catch (error) {
-      console.error('Erreur chargement dashboard:', error);
+      logger.error('Erreur chargement dashboard:', error);
       // Notification d'erreur pour l'utilisateur
       addNotification({
         type: 'error',

@@ -6,6 +6,7 @@ import LaborManagementPanel from '../components/LaborManagementPanel';
 import { waveEngine, Wave, Order } from '../utils/waveEngine';
 import { taskEngine, Task, Operator, TaskMetrics } from '../utils/taskEngine';
 import { laborEngine, OperatorPerformance, LeaderboardEntry } from '../utils/laborEngine';
+import { logger } from '@/lib/logger';
 
 export default function EnterpriseTest() {
   const [testResults, setTestResults] = useState<{
@@ -216,7 +217,7 @@ export default function EnterpriseTest() {
       }
     } catch (error: any) {
       log(`❌ ERREUR: ${error.message}`);
-      console.error('Test error:', error);
+      logger.error('Test error:', error);
     }
 
     setCurrentTest('');

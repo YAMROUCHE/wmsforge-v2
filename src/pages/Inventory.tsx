@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Package, Plus, ArrowRight, RefreshCw, TrendingUp, Box } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import ExportButton from '../components/ExportButton';
+import { logger } from '@/lib/logger';
 
 interface InventoryItem {
   id: number;
@@ -92,7 +93,7 @@ export default function Inventory() {
         setInventory(data.items || []);
       }
     } catch (error) {
-      console.error('Erreur chargement inventaire:', error);
+      logger.error('Erreur chargement inventaire:', error);
     } finally {
       setLoading(false);
     }
@@ -106,7 +107,7 @@ export default function Inventory() {
         setProducts(data.items || []);
       }
     } catch (error) {
-      console.error('Erreur chargement produits:', error);
+      logger.error('Erreur chargement produits:', error);
     }
   };
 
@@ -118,7 +119,7 @@ export default function Inventory() {
         setMovements(data.movements || []);
       }
     } catch (error) {
-      console.error('Erreur chargement mouvements:', error);
+      logger.error('Erreur chargement mouvements:', error);
     }
   };
 
@@ -144,7 +145,7 @@ export default function Inventory() {
         fetchMovements();
       }
     } catch (error) {
-      console.error('Erreur réception:', error);
+      logger.error('Erreur réception:', error);
     }
   };
 
@@ -169,7 +170,7 @@ export default function Inventory() {
         fetchMovements();
       }
     } catch (error) {
-      console.error('Erreur déplacement:', error);
+      logger.error('Erreur déplacement:', error);
     }
   };
 
@@ -194,7 +195,7 @@ export default function Inventory() {
         fetchMovements();
       }
     } catch (error) {
-      console.error('Erreur ajustement:', error);
+      logger.error('Erreur ajustement:', error);
     }
   };
 

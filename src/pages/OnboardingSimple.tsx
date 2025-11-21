@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Warehouse, Package, Check, Rocket, ArrowRight, Building, Building2, Factory, Lightbulb } from 'lucide-react';
+import { logger } from '@/lib/logger';
+import { useNotifications } from '@/contexts/NotificationContext';
 
 const WAREHOUSE_TYPES = [
   {
@@ -29,6 +31,7 @@ const WAREHOUSE_TYPES = [
 
 export default function OnboardingSimple() {
   const navigate = useNavigate();
+  const { addNotification } = useNotifications();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
 
@@ -61,8 +64,12 @@ export default function OnboardingSimple() {
       // Rediriger vers le dashboard
       navigate('/dashboard');
     } catch (error) {
-      console.error('Erreur:', error);
-      alert('Une erreur est survenue. Veuillez réessayer.');
+      logger.error('Erreur:', error);
+      addNotification({
+        type: 'error',
+        title: 'Erreur',
+        message: 'Une erreur est survenue. Veuillez réessayer.'
+      });
     } finally {
       setLoading(false);
     }

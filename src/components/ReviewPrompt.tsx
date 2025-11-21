@@ -2,12 +2,15 @@ import { useState, useEffect } from 'react';
 import { Star, X, ExternalLink, MessageSquare } from 'lucide-react';
 import { Button } from './ui/Button';
 import { fetchAPI } from '../lib/api';
+import { logger } from '@/lib/logger';
+import { useNotifications } from '@/contexts/NotificationContext';
 
 interface ReviewPromptProps {
   onDismiss?: () => void;
 }
 
 export default function ReviewPrompt({ onDismiss }: ReviewPromptProps) {
+  const { addNotification } = useNotifications();
   const [shouldShow, setShouldShow] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [rating, setRating] = useState(0);
@@ -35,7 +38,7 @@ export default function ReviewPrompt({ onDismiss }: ReviewPromptProps) {
         });
       }
     } catch (error) {
-      console.error('Error checking review prompt:', error);
+      logger.error('Error checking review prompt:', error);
     }
   };
 
@@ -84,12 +87,20 @@ export default function ReviewPrompt({ onDismiss }: ReviewPromptProps) {
         })
       });
 
-      alert('Merci pour votre avis ! Il sera examiné par notre équipe.');
+      addNotification({
+        type: 'success',
+        title: 'Avis envoyé',
+        message: 'Merci pour votre avis ! Il sera examiné par notre équipe.'
+      });
       setShouldShow(false);
       if (onDismiss) onDismiss();
     } catch (error) {
-      console.error('Error submitting review:', error);
-      alert('Erreur lors de la soumission de l\'avis. Veuillez réessayer.');
+      logger.error('Error submitting review:', error);
+      addNotification({
+        type: 'error',
+        title: 'Erreur',
+        message: 'Erreur lors de la soumission de l\'avis. Veuillez réessayer.'
+      });
     } finally {
       setIsSubmitting(false);
     }

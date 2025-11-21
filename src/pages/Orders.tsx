@@ -5,6 +5,7 @@ import ExportButton from '../components/ExportButton';
 import { useOrders, useOrderStats, useCreateOrder, useUpdateOrderStatus, useDeleteOrder } from '../hooks/useOrders';
 import { useNotifications } from '../contexts/NotificationContext';
 import { CreateOrderRequest } from '../services/api';
+import { logger } from '@/lib/logger';
 
 interface Product {
   id: number;
@@ -67,7 +68,7 @@ export default function Orders() {
         setProducts(data.products || []);
       }
     } catch (error) {
-      console.error('Erreur chargement produits:', error);
+      logger.error('Erreur chargement produits:', error);
     }
   };
 
