@@ -61,13 +61,13 @@ export default function Dashboard() {
 
       // Fetch en parallèle de toutes les APIs
       const [productsRes, inventoryRes, ordersRes, ordersStatsRes, movementsRes, locationsRes, settingsRes] = await Promise.all([
-        fetch('http://localhost:8787/api/products'),
-        fetch('http://localhost:8787/api/inventory'),
-        fetch('http://localhost:8787/api/orders'),
-        fetch('http://localhost:8787/api/orders/stats'),
-        fetch('http://localhost:8787/api/inventory/movements'),
-        fetch('http://localhost:8787/api/locations'),
-        fetch('http://localhost:8787/api/settings')
+        fetch('/api/products'),
+        fetch('/api/inventory'),
+        fetch('/api/orders'),
+        fetch('/api/orders/stats'),
+        fetch('/api/inventory/movements'),
+        fetch('/api/locations'),
+        fetch('/api/settings')
       ]);
 
       const products = await productsRes.json();

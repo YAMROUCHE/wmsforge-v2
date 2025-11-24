@@ -17,7 +17,7 @@ export default function Navbar() {
     { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { path: '/products', icon: Package, label: 'Produits' },
     { path: '/inventory', icon: Warehouse, label: 'Inventaire' },
-    { path: '/orders', icon: ShoppingCart, label: 'Commandes', disabled: true },
+    { path: '/orders', icon: ShoppingCart, label: 'Commandes' },
   ];
 
   return (

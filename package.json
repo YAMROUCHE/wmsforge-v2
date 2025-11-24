@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:worker": "wrangler dev worker/src/index.ts",
+    "dev:worker": "wrangler dev worker/src/index.ts --port 8787",
     "build": "tsc && vite build",
     "build:worker": "tsc -p worker/tsconfig.json",
     "preview": "vite preview",

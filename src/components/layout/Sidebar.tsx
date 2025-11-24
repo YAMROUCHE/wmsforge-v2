@@ -91,10 +91,10 @@ export default function Sidebar() {
       <div className="p-4 border-t border-gray-200 dark:border-gray-700">
         <button
           onClick={() => setShowNotifications(!showNotifications)}
-          className="w-full flex items-center justify-center px-4 py-3 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors relative"
+          className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'justify-start'} px-4 py-3 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors relative`}
           title="Notifications"
         >
-          <Bell className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+          <Bell className="w-5 h-5 text-gray-700 dark:text-gray-300 flex-shrink-0" />
           {!isCollapsed && (
             <span className="ml-3 font-medium text-gray-700 dark:text-gray-300">Notifications</span>
           )}
@@ -110,19 +110,19 @@ export default function Sidebar() {
       <div className="p-4 border-t border-gray-200 dark:border-gray-700">
         <button
           onClick={toggleTheme}
-          className="w-full flex items-center justify-center px-4 py-3 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+          className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'justify-start'} px-4 py-3 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors`}
           title={theme === 'light' ? 'Passer en mode sombre' : 'Passer en mode clair'}
         >
           {theme === 'light' ? (
             <>
-              <Moon className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+              <Moon className="w-5 h-5 text-gray-700 dark:text-gray-300 flex-shrink-0" />
               {!isCollapsed && (
                 <span className="ml-3 font-medium text-gray-700 dark:text-gray-300">Mode sombre</span>
               )}
             </>
           ) : (
             <>
-              <Sun className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+              <Sun className="w-5 h-5 text-gray-700 dark:text-gray-300 flex-shrink-0" />
               {!isCollapsed && (
                 <span className="ml-3 font-medium text-gray-700 dark:text-gray-300">Mode clair</span>
               )}

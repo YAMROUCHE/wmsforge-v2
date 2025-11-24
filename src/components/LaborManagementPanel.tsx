@@ -32,9 +32,6 @@ export default function LaborManagementPanel({
   };
 
   const getRankIcon = (rank: number) => {
-    if (rank === 1) return '🥇';
-    if (rank === 2) return '🥈';
-    if (rank === 3) return '🥉';
     return `#${rank}`;
   };
 
@@ -94,7 +91,7 @@ export default function LaborManagementPanel({
                   : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
               }`}
             >
-              🏆 Leaderboard
+              Leaderboard
             </button>
             {currentPerformance && (
               <button
@@ -128,7 +125,7 @@ export default function LaborManagementPanel({
         {selectedTab === 'leaderboard' && (
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
-              🏆 Classement du Jour
+              Classement du Jour
             </h3>
             {leaderboard.length === 0 ? (
               <div className="text-center py-8 text-gray-600 dark:text-gray-400">

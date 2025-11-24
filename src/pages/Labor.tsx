@@ -75,7 +75,7 @@ export default function Labor() {
 
           {/* Date selector could go here */}
           <div className="text-sm text-gray-600 dark:text-gray-400">
-            📅 Aujourd'hui: {new Date().toLocaleDateString('fr-FR')}
+            Aujourd'hui: {new Date().toLocaleDateString('fr-FR')}
           </div>
         </div>
       </div>
