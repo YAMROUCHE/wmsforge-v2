@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { Plus, Search, Upload, Edit, Trash2, Package, Filter } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import ExportButton from '../components/ExportButton';
+import CSVImportModal from '../components/products/CSVImportModal';
 import { logger } from '@/lib/logger';
-import { useNotifications } from '@/contexts/NotificationContext';
 
 interface Product {
   id: number;
@@ -22,13 +22,13 @@ interface Product {
 }
 
 export default function Products() {
-  const { addNotification } = useNotifications();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedABCClass, setSelectedABCClass] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   
   // Formulaire nouveau produit
@@ -129,12 +129,12 @@ export default function Products() {
   };
 
   const handleImportCSV = () => {
-    // TODO: Implémenter l'import CSV
-    addNotification({
-      type: 'info',
-      title: 'Import CSV',
-      message: 'Import CSV à venir...'
-    });
+    setShowImportModal(true);
+  };
+
+  const handleImportComplete = () => {
+    setShowImportModal(false);
+    fetchProducts(); // Recharger la liste des produits
   };
 
   // Filtrer les produits
@@ -555,6 +555,11 @@ export default function Products() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Modal Import CSV */}
+      {showImportModal && (
+        <CSVImportModal onClose={handleImportComplete} />
       )}
     </div>
   );
