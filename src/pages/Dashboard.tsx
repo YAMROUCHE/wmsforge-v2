@@ -64,13 +64,13 @@ export default function Dashboard() {
 
       // Fetch en parallèle de toutes les APIs avec authentification
       const [products, inventory, orders, ordersStats, movements, locations, settings] = await Promise.all([
-        fetchAPI('/api/products').catch(() => ({ products: [], pagination: { total: 0 } })),
-        fetchAPI('/api/inventory').catch(() => ({ items: [] })),
-        fetchAPI('/api/orders').catch(() => ({ orders: [] })),
-        fetchAPI('/api/orders/stats').catch(() => ({ stats: {} })),
-        fetchAPI('/api/inventory/movements').catch(() => ({ movements: [] })),
-        fetchAPI('/api/locations').catch(() => ({ locations: [] })),
-        fetchAPI('/api/settings').catch(() => ({ profile: {}, organization: {}, notifications: {}, appearance: {} }))
+        fetchAPI<any>('/api/products').catch(() => ({ products: [], pagination: { total: 0 } })),
+        fetchAPI<any>('/api/inventory').catch(() => ({ items: [] })),
+        fetchAPI<any>('/api/orders').catch(() => ({ orders: [] })),
+        fetchAPI<any>('/api/orders/stats').catch(() => ({ stats: {} })),
+        fetchAPI<any>('/api/inventory/movements').catch(() => ({ movements: [] })),
+        fetchAPI<any>('/api/locations').catch(() => ({ locations: [] })),
+        fetchAPI<any>('/api/settings').catch(() => ({ profile: {}, organization: {}, notifications: {}, appearance: {} }))
       ]);
 
       // Calculer le stock total
