@@ -138,7 +138,9 @@ onboardingRouter.post('/complete', async (c) => {
     const sku = await createDemoProduct(c.env.DB, organizationId, product);
 
     if (sku && storageZoneId) {
-      await addInitialStock(c.env.DB, organizationId, storageZoneId, sku, product?.quantity || 100);
+      const quantity = Number(product?.quantity) || 100;
+      // @ts-ignore - TypeScript inference issue with Number()
+      await addInitialStock(c.env.DB, organizationId, storageZoneId, sku, quantity);
     }
 
     return c.json({

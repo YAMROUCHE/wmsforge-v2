@@ -2,7 +2,7 @@
 
 const API_URL = window.location.hostname === 'localhost'
   ? 'http://localhost:8787'
-  : 'https://api.1wms.io';
+  : 'https://wmsforge-api.youssef-amrouche.workers.dev';
 
 const TOKEN_KEY = 'wms_auth_token';
 

@@ -1,0 +1,18 @@
+name = "wmsforge-api"
+main = "dist/worker/src/index.js"
+compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "wmsforge-db"
+database_id = "4f114494-537e-4c31-8271-79f3ee49dfed"
+
+[vars]
+NODE_ENV = "production"
+JWT_SECRET = "whsec_a8f3b2c1d4e5f6g7h8i9j0k1l2m3n4o5"
+
+# Custom domain configuration
+routes = [
+  { pattern = "api.1wms.io", custom_domain = true }
+]
