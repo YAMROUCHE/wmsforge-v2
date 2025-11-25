@@ -45,6 +45,11 @@ export default function CSVImportModal({ onClose }: CSVImportModalProps) {
   const [columnMapping, setColumnMapping] = useState<ColumnMapping>({});
   const [rawData, setRawData] = useState<any[]>([]);
 
+  // Résolution des doublons de SKU
+  const [showDuplicateResolver, setShowDuplicateResolver] = useState(false);
+  const [duplicateSKUs, setDuplicateSKUs] = useState<string[]>([]);
+  const [skuCombinationColumns, setSkuCombinationColumns] = useState<string[]>([]);
+
   // Colonnes cibles attendues
   const targetColumns = [
     { key: 'sku', label: 'SKU', required: true },
@@ -258,6 +263,20 @@ export default function CSVImportModal({ onClose }: CSVImportModalProps) {
     }
   };
 
+  // Détecter les doublons de SKU
+  const detectDuplicateSKUs = (data: any[]): string[] => {
+    const skuCounts = new Map<string, number>();
+    data.forEach(row => {
+      const sku = row.sku?.toString().trim();
+      if (sku) {
+        skuCounts.set(sku, (skuCounts.get(sku) || 0) + 1);
+      }
+    });
+    return Array.from(skuCounts.entries())
+      .filter(([_, count]) => count > 1)
+      .map(([sku, _]) => sku);
+  };
+
   // Valider le mapping et lancer la validation
   const handleValidateMapping = () => {
     if (rawData.length === 0) return;
@@ -280,6 +299,21 @@ export default function CSVImportModal({ onClose }: CSVImportModalProps) {
     // Appliquer le mapping
     const mappedData = applyMapping(rawData, columnMapping);
 
+    // Détecter les doublons de SKU
+    const duplicates = detectDuplicateSKUs(mappedData);
+
+    if (duplicates.length > 0) {
+      setDuplicateSKUs(duplicates);
+      setShowMapping(false);
+      setShowDuplicateResolver(true);
+      addNotification({
+        type: 'warning',
+        title: 'SKUs en double détectés',
+        message: `${duplicates.length} SKU(s) en double. Sélectionnez des colonnes pour les différencier.`
+      });
+      return;
+    }
+
     // Valider chaque ligne
     const validatedRows = mappedData.map((row, index) =>
       validateRow(row, index + 2)
@@ -295,6 +329,53 @@ export default function CSVImportModal({ onClose }: CSVImportModalProps) {
     addNotification({
       type: errorCount > 0 ? 'warning' : 'success',
       title: 'Validation terminée',
+      message: `${validCount} ligne(s) valide(s), ${errorCount} erreur(s)`
+    });
+  };
+
+  // Résoudre les doublons en combinant le SKU avec d'autres colonnes
+  const handleResolveDuplicates = () => {
+    if (skuCombinationColumns.length === 0) {
+      addNotification({
+        type: 'error',
+        title: 'Sélection requise',
+        message: 'Veuillez sélectionner au moins une colonne pour différencier les variantes'
+      });
+      return;
+    }
+
+    // Appliquer le mapping
+    let mappedData = applyMapping(rawData, columnMapping);
+
+    // Créer des SKUs uniques en combinant avec les colonnes sélectionnées
+    mappedData = mappedData.map(row => {
+      const baseSKU = row.sku?.toString().trim() || '';
+      const suffix = skuCombinationColumns
+        .map(col => row[col]?.toString().trim() || '')
+        .filter(val => val !== '')
+        .join('-');
+
+      return {
+        ...row,
+        sku: suffix ? `${baseSKU}-${suffix}` : baseSKU
+      };
+    });
+
+    // Valider chaque ligne
+    const validatedRows = mappedData.map((row, index) =>
+      validateRow(row, index + 2)
+    );
+
+    setParsedRows(validatedRows);
+    setShowDuplicateResolver(false);
+    setShowPreview(true);
+
+    const errorCount = validatedRows.filter(r => r.status === 'error').length;
+    const validCount = validatedRows.filter(r => r.status === 'valid').length;
+
+    addNotification({
+      type: errorCount > 0 ? 'warning' : 'success',
+      title: 'SKUs uniques créés',
       message: `${validCount} ligne(s) valide(s), ${errorCount} erreur(s)`
     });
   };
@@ -524,6 +605,101 @@ export default function CSVImportModal({ onClose }: CSVImportModalProps) {
                   </Button>
                   <Button onClick={handleValidateMapping}>
                     Valider le mapping
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Duplicate SKU Resolver */}
+          {showDuplicateResolver && duplicateSKUs.length > 0 && (
+            <div className="border border-yellow-200 bg-yellow-50 rounded-lg overflow-hidden">
+              <div className="bg-yellow-100 px-4 py-3 border-b border-yellow-200">
+                <h3 className="font-medium text-yellow-900 flex items-center gap-2">
+                  <AlertCircle className="w-5 h-5" />
+                  SKUs en double détectés
+                </h3>
+                <p className="text-sm text-yellow-700 mt-1">
+                  {duplicateSKUs.length} SKU(s) apparaissent plusieurs fois. Sélectionnez des colonnes additionnelles pour créer des SKUs uniques (ex: taille, couleur).
+                </p>
+              </div>
+              <div className="p-4 bg-white">
+                <div className="mb-4">
+                  <h4 className="text-sm font-medium text-gray-900 mb-2">Exemples de SKUs en double:</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {duplicateSKUs.slice(0, 5).map((sku, i) => (
+                      <span key={i} className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded text-sm font-mono">
+                        {sku}
+                      </span>
+                    ))}
+                    {duplicateSKUs.length > 5 && (
+                      <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded text-sm">
+                        +{duplicateSKUs.length - 5} autres
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="border-t border-gray-200 pt-4 mb-4">
+                  <h4 className="text-sm font-medium text-gray-900 mb-3">
+                    Sélectionnez les colonnes pour différencier les variantes:
+                  </h4>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    {Object.keys(rawData[0] || {}).map((col) => {
+                      const isSelected = skuCombinationColumns.includes(col);
+                      return (
+                        <label
+                          key={col}
+                          className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer transition-colors ${
+                            isSelected
+                              ? 'border-blue-500 bg-blue-50 text-blue-900'
+                              : 'border-gray-300 bg-white hover:border-gray-400'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSkuCombinationColumns([...skuCombinationColumns, col]);
+                              } else {
+                                setSkuCombinationColumns(skuCombinationColumns.filter(c => c !== col));
+                              }
+                            }}
+                            className="rounded text-blue-600"
+                          />
+                          <span className="text-sm font-mono">{col}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {skuCombinationColumns.length > 0 && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                    <p className="text-sm text-blue-900">
+                      <strong>Aperçu du format:</strong> 400.63010.010-{skuCombinationColumns.map(() => 'XXX').join('-')}
+                    </p>
+                    <p className="text-xs text-blue-700 mt-1">
+                      Les colonnes sélectionnées seront ajoutées au SKU: {skuCombinationColumns.join(', ')}
+                    </p>
+                  </div>
+                )}
+
+                <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                  <Button variant="ghost" onClick={() => {
+                    setShowDuplicateResolver(false);
+                    setShowMapping(true);
+                    setDuplicateSKUs([]);
+                    setSkuCombinationColumns([]);
+                  }}>
+                    Retour au mapping
+                  </Button>
+                  <Button
+                    onClick={handleResolveDuplicates}
+                    disabled={skuCombinationColumns.length === 0}
+                  >
+                    Créer SKUs uniques
                   </Button>
                 </div>
               </div>
