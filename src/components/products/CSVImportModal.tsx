@@ -299,10 +299,15 @@ export default function CSVImportModal({ onClose }: CSVImportModalProps) {
     // Appliquer le mapping
     const mappedData = applyMapping(rawData, columnMapping);
 
+    console.log('Mapped data sample:', mappedData.slice(0, 3));
+
     // Détecter les doublons de SKU
     const duplicates = detectDuplicateSKUs(mappedData);
 
+    console.log('Duplicates detected:', duplicates.length, duplicates.slice(0, 5));
+
     if (duplicates.length > 0) {
+      console.log('Showing duplicate resolver interface');
       setDuplicateSKUs(duplicates);
       setShowMapping(false);
       setShowDuplicateResolver(true);
