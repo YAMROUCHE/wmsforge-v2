@@ -276,6 +276,12 @@ export default function CSVImportModal({ onClose }: CSVImportModalProps) {
 
   // Résolution AUTOMATIQUE des doublons : trouve les colonnes qui différencient les variantes
   const autoResolveDuplicates = (data: any[], duplicateSKUs: string[]): any[] => {
+    // Colonnes à exclure (colonnes système qui ne sont pas des variantes)
+    const excludedColumns = ['sku', 'name', 'description', 'category', 'unitprice', 'reorderpoint', 'prix', 'nom', 'designation'];
+
+    // Colonnes prioritaires pour les variantes (patterns courants)
+    const variantPatterns = ['taille', 'size', 'couleur', 'color', 'colour', 'pointure', 'dimension', 'variant', 'option'];
+
     // Grouper les lignes par SKU
     const groupedBySKU = new Map<string, any[]>();
     data.forEach(row => {
@@ -304,9 +310,11 @@ export default function CSVImportModal({ onClose }: CSVImportModalProps) {
         return row;
       }
 
-      // Trouver les colonnes qui varient dans ce groupe
+      // Trouver les colonnes qui varient dans ce groupe (exclure les colonnes système)
       const varyingColumns: string[] = [];
-      const allColumns = Object.keys(row).filter(col => col !== 'sku');
+      const allColumns = Object.keys(row).filter(col =>
+        !excludedColumns.includes(col.toLowerCase())
+      );
 
       for (const col of allColumns) {
         const values = new Set(group.map(r => r[col]?.toString().trim() || ''));
@@ -316,15 +324,30 @@ export default function CSVImportModal({ onClose }: CSVImportModalProps) {
         }
       }
 
-      console.log(`SKU ${sku}: found ${varyingColumns.length} varying columns:`, varyingColumns.slice(0, 3));
+      // Trier les colonnes : prioriser celles qui ressemblent à des variantes
+      const sortedColumns = varyingColumns.sort((a, b) => {
+        const aLower = a.toLowerCase();
+        const bLower = b.toLowerCase();
+        const aIsVariant = variantPatterns.some(p => aLower.includes(p));
+        const bIsVariant = variantPatterns.some(p => bLower.includes(p));
+        if (aIsVariant && !bIsVariant) return -1;
+        if (!aIsVariant && bIsVariant) return 1;
+        return 0;
+      });
+
+      console.log(`SKU ${sku}: found ${sortedColumns.length} varying columns:`, sortedColumns.slice(0, 3));
 
       // Créer un suffixe unique basé sur les colonnes qui varient
       let suffix = '';
-      if (varyingColumns.length > 0) {
-        // Utiliser les colonnes qui varient (max 3 pour ne pas avoir des SKUs trop longs)
-        const columnsToUse = varyingColumns.slice(0, 3);
+      if (sortedColumns.length > 0) {
+        // Utiliser les colonnes qui varient (max 2 pour ne pas avoir des SKUs trop longs)
+        const columnsToUse = sortedColumns.slice(0, 2);
         suffix = columnsToUse
-          .map(col => row[col]?.toString().trim() || '')
+          .map(col => {
+            const val = row[col]?.toString().trim() || '';
+            // Limiter la longueur de chaque valeur à 10 caractères
+            return val.length > 10 ? val.substring(0, 10) : val;
+          })
           .filter(val => val !== '')
           .join('-');
       }
@@ -332,12 +355,21 @@ export default function CSVImportModal({ onClose }: CSVImportModalProps) {
       // Si aucune colonne ne varie OU si le suffixe est vide, utiliser un index
       if (!suffix) {
         const index = group.findIndex(r => r === row);
-        suffix = `variant-${index + 1}`;
+        suffix = `v${index + 1}`;
+      }
+
+      // S'assurer que le SKU final ne dépasse pas 50 caractères
+      const baseSku = sku;
+      const maxSuffixLength = 50 - baseSku.length - 1; // -1 pour le tiret
+      if (suffix.length > maxSuffixLength) {
+        // Tronquer le suffixe et ajouter un hash court pour l'unicité
+        const index = group.findIndex(r => r === row);
+        suffix = `v${index + 1}`;
       }
 
       return {
         ...row,
-        sku: `${sku}-${suffix}`
+        sku: `${baseSku}-${suffix}`
       };
     });
 
