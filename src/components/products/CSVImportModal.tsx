@@ -49,6 +49,7 @@ export default function CSVImportModal({ onClose }: CSVImportModalProps) {
   const [showDuplicateResolver, setShowDuplicateResolver] = useState(false);
   const [duplicateSKUs, setDuplicateSKUs] = useState<string[]>([]);
   const [skuCombinationColumns, setSkuCombinationColumns] = useState<string[]>([]);
+  const [mappedDataForDuplicates, setMappedDataForDuplicates] = useState<any[]>([]);
 
   // Colonnes cibles attendues
   const targetColumns = [
@@ -309,6 +310,7 @@ export default function CSVImportModal({ onClose }: CSVImportModalProps) {
     if (duplicates.length > 0) {
       console.log('Showing duplicate resolver interface');
       setDuplicateSKUs(duplicates);
+      setMappedDataForDuplicates(mappedData); // Stocker les données mappées
       setShowMapping(false);
       setShowDuplicateResolver(true);
       addNotification({
@@ -349,11 +351,8 @@ export default function CSVImportModal({ onClose }: CSVImportModalProps) {
       return;
     }
 
-    // Appliquer le mapping
-    let mappedData = applyMapping(rawData, columnMapping);
-
     // Créer des SKUs uniques en combinant avec les colonnes sélectionnées
-    mappedData = mappedData.map(row => {
+    const dataWithUniqueSKUs = mappedDataForDuplicates.map(row => {
       const baseSKU = row.sku?.toString().trim() || '';
       const suffix = skuCombinationColumns
         .map(col => row[col]?.toString().trim() || '')
@@ -367,7 +366,7 @@ export default function CSVImportModal({ onClose }: CSVImportModalProps) {
     });
 
     // Valider chaque ligne
-    const validatedRows = mappedData.map((row, index) =>
+    const validatedRows = dataWithUniqueSKUs.map((row, index) =>
       validateRow(row, index + 2)
     );
 
@@ -650,7 +649,7 @@ export default function CSVImportModal({ onClose }: CSVImportModalProps) {
                     Sélectionnez les colonnes pour différencier les variantes:
                   </h4>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                    {Object.keys(rawData[0] || {}).map((col) => {
+                    {mappedDataForDuplicates.length > 0 && Object.keys(mappedDataForDuplicates[0] || {}).map((col) => {
                       const isSelected = skuCombinationColumns.includes(col);
                       return (
                         <label
@@ -697,6 +696,7 @@ export default function CSVImportModal({ onClose }: CSVImportModalProps) {
                     setShowMapping(true);
                     setDuplicateSKUs([]);
                     setSkuCombinationColumns([]);
+                    setMappedDataForDuplicates([]);
                   }}>
                     Retour au mapping
                   </Button>
