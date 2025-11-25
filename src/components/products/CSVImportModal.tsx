@@ -280,6 +280,77 @@ export default function CSVImportModal({ onClose }: CSVImportModalProps) {
       .map(([sku, _]) => sku);
   };
 
+  // Résolution AUTOMATIQUE des doublons : trouve les colonnes qui différencient les variantes
+  const autoResolveDuplicates = (data: any[], duplicateSKUs: string[]): any[] => {
+    // Grouper les lignes par SKU
+    const groupedBySKU = new Map<string, any[]>();
+    data.forEach(row => {
+      const sku = row.sku?.toString().trim();
+      if (sku && duplicateSKUs.includes(sku)) {
+        if (!groupedBySKU.has(sku)) {
+          groupedBySKU.set(sku, []);
+        }
+        groupedBySKU.get(sku)!.push(row);
+      }
+    });
+
+    console.log('Grouped duplicates:', groupedBySKU.size, 'unique SKUs with duplicates');
+
+    // Pour chaque groupe de doublons, trouver les colonnes qui varient
+    const resolvedData = data.map(row => {
+      const sku = row.sku?.toString().trim();
+      if (!sku || !duplicateSKUs.includes(sku)) {
+        // Pas un doublon, garder tel quel
+        return row;
+      }
+
+      const group = groupedBySKU.get(sku)!;
+      if (group.length === 1) {
+        // Seule occurrence, pas de doublon finalement
+        return row;
+      }
+
+      // Trouver les colonnes qui varient dans ce groupe
+      const varyingColumns: string[] = [];
+      const allColumns = Object.keys(row).filter(col => col !== 'sku');
+
+      for (const col of allColumns) {
+        const values = new Set(group.map(r => r[col]?.toString().trim() || ''));
+        if (values.size > 1) {
+          // Cette colonne a des valeurs différentes dans le groupe
+          varyingColumns.push(col);
+        }
+      }
+
+      console.log(`SKU ${sku}: found ${varyingColumns.length} varying columns:`, varyingColumns.slice(0, 3));
+
+      // Créer un suffixe unique basé sur les colonnes qui varient
+      let suffix = '';
+      if (varyingColumns.length > 0) {
+        // Utiliser les colonnes qui varient (max 3 pour ne pas avoir des SKUs trop longs)
+        const columnsToUse = varyingColumns.slice(0, 3);
+        suffix = columnsToUse
+          .map(col => row[col]?.toString().trim() || '')
+          .filter(val => val !== '')
+          .join('-');
+      }
+
+      // Si aucune colonne ne varie OU si le suffixe est vide, utiliser un index
+      if (!suffix) {
+        const index = group.findIndex(r => r === row);
+        suffix = `variant-${index + 1}`;
+      }
+
+      return {
+        ...row,
+        sku: `${sku}-${suffix}`
+      };
+    });
+
+    console.log('Resolved duplicates sample:', resolvedData.slice(0, 3).map(r => r.sku));
+    return resolvedData;
+  };
+
   // Valider le mapping et lancer la validation
   const handleValidateMapping = () => {
     if (rawData.length === 0) return;
@@ -309,22 +380,22 @@ export default function CSVImportModal({ onClose }: CSVImportModalProps) {
 
     console.log('Duplicates detected:', duplicates.length, duplicates.slice(0, 5));
 
+    let dataToValidate = mappedData;
+
     if (duplicates.length > 0) {
-      console.log('Showing duplicate resolver interface');
-      setDuplicateSKUs(duplicates);
-      setMappedDataForDuplicates(mappedData); // Stocker les données mappées
-      setShowMapping(false);
-      setShowDuplicateResolver(true);
+      console.log('Auto-resolving duplicates...');
+      // Résolution AUTOMATIQUE des doublons
+      dataToValidate = autoResolveDuplicates(mappedData, duplicates);
+
       addNotification({
-        type: 'warning',
-        title: 'SKUs en double détectés',
-        message: `${duplicates.length} SKU(s) en double. Sélectionnez des colonnes pour les différencier.`
+        type: 'info',
+        title: 'SKUs dupliqués résolus',
+        message: `${duplicates.length} SKU(s) dupliqués ont été rendus uniques automatiquement`
       });
-      return;
     }
 
     // Valider chaque ligne
-    const validatedRows = mappedData.map((row, index) =>
+    const validatedRows = dataToValidate.map((row, index) =>
       validateRow(row, index + 2)
     );
 
