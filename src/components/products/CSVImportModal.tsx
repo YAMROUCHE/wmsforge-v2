@@ -117,16 +117,18 @@ export default function CSVImportModal({ onClose }: CSVImportModalProps) {
     const errors: ValidationError[] = [];
 
     // SKU (obligatoire)
-    if (!row.sku || row.sku.trim() === '') {
+    const skuStr = row.sku?.toString().trim() || '';
+    if (!skuStr) {
       errors.push({ field: 'sku', message: 'SKU obligatoire' });
-    } else if (row.sku.length > 50) {
+    } else if (skuStr.length > 50) {
       errors.push({ field: 'sku', message: 'SKU trop long (max 50 caractères)' });
     }
 
     // Name (obligatoire)
-    if (!row.name || row.name.trim() === '') {
+    const nameStr = row.name?.toString().trim() || '';
+    if (!nameStr) {
       errors.push({ field: 'name', message: 'Nom obligatoire' });
-    } else if (row.name.length > 200) {
+    } else if (nameStr.length > 200) {
       errors.push({ field: 'name', message: 'Nom trop long (max 200 caractères)' });
     }
 
@@ -151,10 +153,10 @@ export default function CSVImportModal({ onClose }: CSVImportModalProps) {
     }
 
     const product: CreateProductData | undefined = errors.length === 0 ? {
-      sku: row.sku.trim(),
-      name: row.name.trim(),
-      description: row.description?.trim() || '',
-      category: row.category?.trim() || '',
+      sku: skuStr,
+      name: nameStr,
+      description: row.description?.toString().trim() || '',
+      category: row.category?.toString().trim() || '',
       unitPrice: row.unitPrice ? (parseFloat(row.unitPrice) * 100).toString() : '',
       reorderPoint: row.reorderPoint || '10',
     } : undefined;
