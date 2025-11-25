@@ -95,6 +95,80 @@ app.post('/', async (c) => {
   }
 });
 
+// POST /api/products/import-csv - Import en masse via CSV
+app.post('/import-csv', async (c) => {
+  try {
+    const db = drizzle(c.env.DB);
+    const { organizationId } = getAuthUser(c);
+    const body = await c.req.json();
+
+    if (!body.products || !Array.isArray(body.products)) {
+      return c.json({ error: 'Invalid request: products array required' }, 400);
+    }
+
+    const results = {
+      created: 0,
+      failed: 0,
+      errors: [] as string[]
+    };
+
+    // Process each product
+    for (const product of body.products) {
+      try {
+        // Parse unitPrice from string (cents) to integer
+        const price = product.unitPrice ? parseInt(product.unitPrice) : null;
+        const reorderPoint = product.reorderPoint ? parseInt(product.reorderPoint) : 10;
+
+        const newProduct = {
+          organizationId,
+          sku: product.sku,
+          name: product.name,
+          description: product.description || null,
+          category: product.category || null,
+          price: price,
+          cost: null,
+          weight: null,
+          length: null,
+          width: null,
+          height: null,
+          volume: null,
+          abcClass: 'C',
+          velocityScore: 20,
+          minStock: reorderPoint,
+          maxStock: null,
+          reorderPoint: reorderPoint,
+          safetyStock: 0,
+          fragile: 0,
+          stackable: 1,
+          status: 'active',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+
+        await db.insert(products).values(newProduct);
+        results.created++;
+      } catch (error: any) {
+        results.failed++;
+        const errorMsg = error.message || 'Unknown error';
+        // Check if it's a duplicate SKU error
+        if (errorMsg.includes('UNIQUE') || errorMsg.includes('unique')) {
+          results.errors.push(`SKU ${product.sku}: Already exists`);
+        } else {
+          results.errors.push(`SKU ${product.sku}: ${errorMsg}`);
+        }
+      }
+    }
+
+    return c.json(results);
+  } catch (error) {
+    console.error('Error importing products:', error);
+    return c.json({
+      error: 'Failed to import products',
+      details: (error as Error).message
+    }, 500);
+  }
+});
+
 // GET /api/products/:id - Détail d'un produit
 app.get('/:id', async (c) => {
   try {
