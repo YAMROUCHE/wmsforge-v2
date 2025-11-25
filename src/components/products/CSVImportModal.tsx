@@ -405,14 +405,42 @@ export default function CSVImportModal({ onClose }: CSVImportModalProps) {
 
     try {
       const products = validRows.map(r => r.product!);
-      const importResult = await importProductsCSV(products);
+
+      // Import par batch de 50 produits à la fois pour éviter les timeouts
+      const BATCH_SIZE = 50;
+      let totalCreated = 0;
+      let totalFailed = 0;
+      const allErrors: string[] = [];
+
+      for (let i = 0; i < products.length; i += BATCH_SIZE) {
+        const batch = products.slice(i, i + BATCH_SIZE);
+        console.log(`Importing batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(products.length / BATCH_SIZE)}: ${batch.length} products`);
+
+        try {
+          const batchResult = await importProductsCSV(batch);
+          totalCreated += batchResult.created;
+          totalFailed += batchResult.failed;
+          allErrors.push(...batchResult.errors);
+        } catch (error) {
+          console.error('Batch import failed:', error);
+          totalFailed += batch.length;
+          allErrors.push(`Batch ${Math.floor(i / BATCH_SIZE) + 1}: Failed to import`);
+        }
+      }
+
+      const importResult = {
+        created: totalCreated,
+        failed: totalFailed,
+        errors: allErrors
+      };
+
       setResult(importResult);
 
       if (importResult.created > 0) {
         addNotification({
-          type: 'success',
-          title: 'Import réussi',
-          message: `${importResult.created} produit(s) importé(s)`
+          type: importResult.failed > 0 ? 'warning' : 'success',
+          title: importResult.failed > 0 ? 'Import partiel' : 'Import réussi',
+          message: `${importResult.created} produit(s) importé(s)${importResult.failed > 0 ? `, ${importResult.failed} échec(s)` : ''}`
         });
         setTimeout(() => {
           onClose();
@@ -519,13 +547,27 @@ export default function CSVImportModal({ onClose }: CSVImportModalProps) {
               className="hidden"
               id="file-upload"
               disabled={isLoading}
+              ref={(input) => {
+                if (input) {
+                  (window as any).fileInput = input;
+                }
+              }}
             />
-            <label
-              htmlFor="file-upload"
+            <button
+              type="button"
+              onClick={() => {
+                console.log('Button clicked!');
+                const input = document.getElementById('file-upload') as HTMLInputElement;
+                if (input) {
+                  console.log('Triggering input click');
+                  input.click();
+                }
+              }}
+              disabled={isLoading}
               className={`inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg font-medium text-gray-700 bg-white hover:bg-gray-50 cursor-pointer ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               {file ? 'Changer de fichier' : 'Parcourir'}
-            </label>
+            </button>
           </div>
 
           {/* Column Mapping */}
