@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Upload, Download, CheckCircle, XCircle, AlertCircle, FileText, FileSpreadsheet } from 'lucide-react';
+import { X, Upload, Download, CheckCircle, XCircle, AlertCircle, FileText, FileSpreadsheet, ArrowRight } from 'lucide-react';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
 import { Button } from '../ui/Button';
@@ -23,6 +23,10 @@ interface ProductRow {
   status: 'valid' | 'error' | 'warning';
 }
 
+interface ColumnMapping {
+  [sourceColumn: string]: string; // sourceColumn → targetColumn (sku, name, etc.)
+}
+
 export default function CSVImportModal({ onClose }: CSVImportModalProps) {
   const { addNotification } = useNotifications();
   const [file, setFile] = useState<File | null>(null);
@@ -34,6 +38,73 @@ export default function CSVImportModal({ onClose }: CSVImportModalProps) {
     failed: number;
     errors: string[];
   } | null>(null);
+
+  // Mapping de colonnes
+  const [showMapping, setShowMapping] = useState(false);
+  const [sourceColumns, setSourceColumns] = useState<string[]>([]);
+  const [columnMapping, setColumnMapping] = useState<ColumnMapping>({});
+  const [rawData, setRawData] = useState<any[]>([]);
+
+  // Colonnes cibles attendues
+  const targetColumns = [
+    { key: 'sku', label: 'SKU', required: true },
+    { key: 'name', label: 'Nom', required: true },
+    { key: 'description', label: 'Description', required: false },
+    { key: 'category', label: 'Catégorie', required: false },
+    { key: 'unitPrice', label: 'Prix unitaire', required: false },
+    { key: 'reorderPoint', label: 'Point de réappro', required: false },
+  ];
+
+  // Mapping automatique intelligent des colonnes
+  const autoMapColumns = (columns: string[]): ColumnMapping => {
+    const mapping: ColumnMapping = {};
+
+    const normalize = (str: string) =>
+      str.toLowerCase()
+        .trim()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '') // Remove accents
+        .replace(/[^a-z0-9]/g, '');
+
+    // Règles de mapping (patterns pour chaque colonne cible)
+    const mappingRules: { [key: string]: string[] } = {
+      sku: ['sku', 'ref', 'reference', 'code', 'codearticle', 'article', 'produit', 'product'],
+      name: ['name', 'nom', 'libelle', 'designation', 'intitule', 'title', 'titre', 'description'],
+      description: ['description', 'desc', 'details', 'commentaire', 'comment', 'notes'],
+      category: ['category', 'categorie', 'cat', 'famille', 'family', 'type', 'classe'],
+      unitPrice: ['unitprice', 'price', 'prix', 'prixunitaire', 'priceunit', 'prixht', 'prixttc', 'tarif', 'montant'],
+      reorderPoint: ['reorderpoint', 'reorder', 'stockmin', 'ministock', 'minstock', 'seuilmin', 'seuil', 'threshold'],
+    };
+
+    // Pour chaque colonne source, trouver la meilleure correspondance
+    columns.forEach(sourceCol => {
+      const normalizedSource = normalize(sourceCol);
+
+      for (const [targetKey, patterns] of Object.entries(mappingRules)) {
+        if (patterns.some(pattern => normalizedSource.includes(pattern) || pattern.includes(normalizedSource))) {
+          // Si pas encore mappé, on l'assigne
+          if (!Object.values(mapping).includes(targetKey)) {
+            mapping[sourceCol] = targetKey;
+            break;
+          }
+        }
+      }
+    });
+
+    return mapping;
+  };
+
+  // Appliquer le mapping aux données
+  const applyMapping = (data: any[], mapping: ColumnMapping): any[] => {
+    return data.map(row => {
+      const mappedRow: any = {};
+      Object.keys(row).forEach(sourceKey => {
+        const targetKey = mapping[sourceKey] || sourceKey.toLowerCase();
+        mappedRow[targetKey] = row[sourceKey];
+      });
+      return mappedRow;
+    });
+  };
 
   // Validation des champs
   const validateRow = (row: any, lineNumber: number): ProductRow => {
@@ -91,38 +162,31 @@ export default function CSVImportModal({ onClose }: CSVImportModalProps) {
     };
   };
 
-  // Parsing CSV avec PapaParse
-  const parseCSV = (text: string): Promise<ProductRow[]> => {
+  // Parsing CSV avec PapaParse (sans validation, retourne données brutes + colonnes)
+  const parseCSV = (text: string): Promise<{ data: any[]; columns: string[] }> => {
     return new Promise((resolve, reject) => {
       Papa.parse(text, {
         header: true,
         skipEmptyLines: true,
-        transformHeader: (header) => header.trim().toLowerCase(),
+        transformHeader: (header) => header.trim(),
         complete: (results) => {
-          const rows = results.data.map((row: any, index: number) =>
-            validateRow(row, index + 2) // +2 car ligne 1 = header
-          );
-          resolve(rows);
+          const columns = results.meta.fields || [];
+          resolve({ data: results.data, columns });
         },
         error: (error: any) => reject(error),
       });
     });
   };
 
-  // Parsing Excel avec xlsx
-  const parseExcel = (arrayBuffer: ArrayBuffer): ProductRow[] => {
+  // Parsing Excel avec xlsx (sans validation, retourne données brutes + colonnes)
+  const parseExcel = (arrayBuffer: ArrayBuffer): { data: any[]; columns: string[] } => {
     const workbook = XLSX.read(arrayBuffer, { type: 'array' });
     const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
     const jsonData = XLSX.utils.sheet_to_json(firstSheet, { defval: '' });
 
-    return jsonData.map((row: any, index: number) => {
-      // Normaliser les clés (minuscules, trim)
-      const normalizedRow: any = {};
-      Object.keys(row).forEach(key => {
-        normalizedRow[key.trim().toLowerCase()] = row[key];
-      });
-      return validateRow(normalizedRow, index + 2); // +2 car ligne 1 = header
-    });
+    const columns = jsonData.length > 0 ? Object.keys(jsonData[0] as Record<string, any>) : [];
+
+    return { data: jsonData, columns };
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -132,7 +196,11 @@ export default function CSVImportModal({ onClose }: CSVImportModalProps) {
     setFile(selectedFile);
     setResult(null);
     setShowPreview(false);
+    setShowMapping(false);
     setParsedRows([]);
+    setRawData([]);
+    setSourceColumns([]);
+    setColumnMapping({});
 
     const fileName = selectedFile.name.toLowerCase();
     const isCSV = fileName.endsWith('.csv');
@@ -150,26 +218,33 @@ export default function CSVImportModal({ onClose }: CSVImportModalProps) {
 
     try {
       setIsLoading(true);
-      let rows: ProductRow[] = [];
+      let parsed: { data: any[]; columns: string[] };
 
       if (isCSV) {
         const text = await selectedFile.text();
-        rows = await parseCSV(text);
+        parsed = await parseCSV(text);
       } else if (isExcel) {
         const arrayBuffer = await selectedFile.arrayBuffer();
-        rows = parseExcel(arrayBuffer);
+        parsed = parseExcel(arrayBuffer);
+      } else {
+        return;
       }
 
-      setParsedRows(rows);
-      setShowPreview(true);
+      // Stocker les données brutes et colonnes
+      setRawData(parsed.data);
+      setSourceColumns(parsed.columns);
 
-      const errorCount = rows.filter(r => r.status === 'error').length;
-      const validCount = rows.filter(r => r.status === 'valid').length;
+      // Mapping automatique
+      const autoMapping = autoMapColumns(parsed.columns);
+      setColumnMapping(autoMapping);
+
+      // Afficher l'étape de mapping
+      setShowMapping(true);
 
       addNotification({
-        type: errorCount > 0 ? 'warning' : 'success',
-        title: 'Fichier analysé',
-        message: `${validCount} ligne(s) valide(s), ${errorCount} erreur(s) détectée(s)`
+        type: 'success',
+        title: 'Fichier chargé',
+        message: `${parsed.data.length} lignes détectées. Vérifiez le mapping des colonnes.`
       });
     } catch (error: any) {
       addNotification({
@@ -181,6 +256,47 @@ export default function CSVImportModal({ onClose }: CSVImportModalProps) {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Valider le mapping et lancer la validation
+  const handleValidateMapping = () => {
+    if (rawData.length === 0) return;
+
+    // Vérifier que les colonnes obligatoires sont mappées
+    const requiredColumns = targetColumns.filter(col => col.required).map(col => col.key);
+    const mappedTargets = Object.values(columnMapping);
+
+    const missingRequired = requiredColumns.filter(req => !mappedTargets.includes(req));
+
+    if (missingRequired.length > 0) {
+      addNotification({
+        type: 'error',
+        title: 'Mapping incomplet',
+        message: `Colonnes obligatoires manquantes: ${missingRequired.join(', ')}`
+      });
+      return;
+    }
+
+    // Appliquer le mapping
+    const mappedData = applyMapping(rawData, columnMapping);
+
+    // Valider chaque ligne
+    const validatedRows = mappedData.map((row, index) =>
+      validateRow(row, index + 2)
+    );
+
+    setParsedRows(validatedRows);
+    setShowMapping(false);
+    setShowPreview(true);
+
+    const errorCount = validatedRows.filter(r => r.status === 'error').length;
+    const validCount = validatedRows.filter(r => r.status === 'valid').length;
+
+    addNotification({
+      type: errorCount > 0 ? 'warning' : 'success',
+      title: 'Validation terminée',
+      message: `${validCount} ligne(s) valide(s), ${errorCount} erreur(s)`
+    });
   };
 
   const handleImport = async () => {
@@ -324,6 +440,95 @@ export default function CSVImportModal({ onClose }: CSVImportModalProps) {
               {file ? 'Changer de fichier' : 'Parcourir'}
             </label>
           </div>
+
+          {/* Column Mapping */}
+          {showMapping && sourceColumns.length > 0 && (
+            <div className="border border-blue-200 bg-blue-50 rounded-lg overflow-hidden">
+              <div className="bg-blue-100 px-4 py-3 border-b border-blue-200">
+                <h3 className="font-medium text-blue-900 flex items-center gap-2">
+                  <ArrowRight className="w-5 h-5" />
+                  Correspondance des colonnes
+                </h3>
+                <p className="text-sm text-blue-700 mt-1">
+                  Vérifiez que chaque colonne de votre fichier correspond à la bonne colonne du système
+                </p>
+              </div>
+              <div className="p-4 bg-white">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  {/* Colonnes source */}
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">Colonnes de votre fichier:</h4>
+                    <ul className="text-sm text-gray-600 space-y-1">
+                      {sourceColumns.map((col, i) => (
+                        <li key={i} className="px-3 py-1 bg-gray-100 rounded font-mono">{col}</li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* Mapping */}
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">Colonnes du système:</h4>
+                    <div className="space-y-2">
+                      {targetColumns.map((target) => {
+                        const mappedSource = Object.entries(columnMapping).find(
+                          ([_, value]) => value === target.key
+                        )?.[0];
+
+                        return (
+                          <div key={target.key} className="flex items-center gap-2">
+                            <label className="flex-1 text-sm">
+                              <span className="font-medium text-gray-900">
+                                {target.label}
+                                {target.required && <span className="text-red-500 ml-1">*</span>}
+                              </span>
+                            </label>
+                            <select
+                              value={mappedSource || ''}
+                              onChange={(e) => {
+                                const newMapping = { ...columnMapping };
+                                // Retirer ancien mapping de cette cible
+                                Object.keys(newMapping).forEach(key => {
+                                  if (newMapping[key] === target.key) {
+                                    delete newMapping[key];
+                                  }
+                                });
+                                // Ajouter nouveau mapping si sélectionné
+                                if (e.target.value) {
+                                  newMapping[e.target.value] = target.key;
+                                }
+                                setColumnMapping(newMapping);
+                              }}
+                              className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            >
+                              <option value="">-- Non mappé --</option>
+                              {sourceColumns.map((col) => (
+                                <option key={col} value={col}>{col}</option>
+                              ))}
+                            </select>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                  <Button variant="ghost" onClick={() => {
+                    setShowMapping(false);
+                    setFile(null);
+                    setRawData([]);
+                    setSourceColumns([]);
+                    setColumnMapping({});
+                  }}>
+                    Annuler
+                  </Button>
+                  <Button onClick={handleValidateMapping}>
+                    Valider le mapping
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Preview */}
           {showPreview && parsedRows.length > 0 && (
