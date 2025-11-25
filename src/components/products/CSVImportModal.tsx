@@ -274,106 +274,117 @@ export default function CSVImportModal({ onClose }: CSVImportModalProps) {
       .map(([sku, _]) => sku);
   };
 
-  // Résolution AUTOMATIQUE des doublons : trouve les colonnes qui différencient les variantes
+  // Résolution AUTOMATIQUE des doublons avec numéro séquentiel (garantit 0 doublon)
+  // Format : {PREFIX}-{CODE}-{XXXX} où XXXX est un numéro séquentiel
   const autoResolveDuplicates = (data: any[], duplicateSKUs: string[]): any[] => {
-    // Colonnes à exclure (colonnes système qui ne sont pas des variantes)
-    const excludedColumns = ['sku', 'name', 'description', 'category', 'unitprice', 'reorderpoint', 'prix', 'nom', 'designation'];
+    // Compteur global pour garantir l'unicité
+    let globalCounter = 1;
 
-    // Colonnes prioritaires pour les variantes (patterns courants)
-    const variantPatterns = ['taille', 'size', 'couleur', 'color', 'colour', 'pointure', 'dimension', 'variant', 'option'];
+    // Map pour tracker les SKUs déjà utilisés
+    const usedSKUs = new Set<string>();
 
-    // Grouper les lignes par SKU
-    const groupedBySKU = new Map<string, any[]>();
+    // D'abord, collecter tous les SKUs non-dupliqués
     data.forEach(row => {
       const sku = row.sku?.toString().trim();
-      if (sku && duplicateSKUs.includes(sku)) {
-        if (!groupedBySKU.has(sku)) {
-          groupedBySKU.set(sku, []);
-        }
-        groupedBySKU.get(sku)!.push(row);
+      if (sku && !duplicateSKUs.includes(sku)) {
+        usedSKUs.add(sku);
       }
     });
 
-    console.log('Grouped duplicates:', groupedBySKU.size, 'unique SKUs with duplicates');
+    console.log('Resolving', duplicateSKUs.length, 'duplicate SKU groups');
 
-    // Pour chaque groupe de doublons, trouver les colonnes qui varient
-    const resolvedData = data.map(row => {
-      const sku = row.sku?.toString().trim();
-      if (!sku || !duplicateSKUs.includes(sku)) {
-        // Pas un doublon, garder tel quel
-        return row;
-      }
+    // Fonction pour extraire un préfixe intelligent depuis les données
+    const extractPrefix = (row: any): string => {
+      // Chercher une colonne de type "groupe" ou "catégorie" pour le préfixe
+      const groupColumns = ['artgrp', 'art grp', 'groupe', 'group', 'category', 'categorie', 'cat'];
+      const descColumns = ['description', 'desc', 'name', 'nom', 'designation', 'libelle'];
 
-      const group = groupedBySKU.get(sku)!;
-      if (group.length === 1) {
-        // Seule occurrence, pas de doublon finalement
-        return row;
-      }
+      let prefix = '';
+      let code = '';
 
-      // Trouver les colonnes qui varient dans ce groupe (exclure les colonnes système)
-      const varyingColumns: string[] = [];
-      const allColumns = Object.keys(row).filter(col =>
-        !excludedColumns.includes(col.toLowerCase())
-      );
-
-      for (const col of allColumns) {
-        const values = new Set(group.map(r => r[col]?.toString().trim() || ''));
-        if (values.size > 1) {
-          // Cette colonne a des valeurs différentes dans le groupe
-          varyingColumns.push(col);
+      // 1. Chercher un groupe/catégorie (ex: "20")
+      for (const colName of Object.keys(row)) {
+        if (groupColumns.some(g => colName.toLowerCase().includes(g))) {
+          const val = row[colName]?.toString().trim();
+          if (val && val.length <= 10) {
+            prefix = val.replace(/[^a-zA-Z0-9]/g, '').substring(0, 10);
+            break;
+          }
         }
       }
 
-      // Trier les colonnes : prioriser celles qui ressemblent à des variantes
-      const sortedColumns = varyingColumns.sort((a, b) => {
-        const aLower = a.toLowerCase();
-        const bLower = b.toLowerCase();
-        const aIsVariant = variantPatterns.some(p => aLower.includes(p));
-        const bIsVariant = variantPatterns.some(p => bLower.includes(p));
-        if (aIsVariant && !bIsVariant) return -1;
-        if (!aIsVariant && bIsVariant) return 1;
-        return 0;
-      });
-
-      console.log(`SKU ${sku}: found ${sortedColumns.length} varying columns:`, sortedColumns.slice(0, 3));
-
-      // Créer un suffixe unique basé sur les colonnes qui varient
-      let suffix = '';
-      if (sortedColumns.length > 0) {
-        // Utiliser les colonnes qui varient (max 2 pour ne pas avoir des SKUs trop longs)
-        const columnsToUse = sortedColumns.slice(0, 2);
-        suffix = columnsToUse
-          .map(col => {
-            const val = row[col]?.toString().trim() || '';
-            // Limiter la longueur de chaque valeur à 10 caractères
-            return val.length > 10 ? val.substring(0, 10) : val;
-          })
-          .filter(val => val !== '')
-          .join('-');
+      // 2. Chercher un code depuis la description (3 premières lettres du premier mot)
+      for (const colName of Object.keys(row)) {
+        if (descColumns.some(d => colName.toLowerCase().includes(d))) {
+          const val = row[colName]?.toString().trim();
+          if (val) {
+            // Prendre les 3 premières lettres du premier mot
+            const firstWord = val.split(/\s+/)[0] || '';
+            code = firstWord.replace(/[^a-zA-Z]/g, '').substring(0, 3).toUpperCase();
+            break;
+          }
+        }
       }
 
-      // Si aucune colonne ne varie OU si le suffixe est vide, utiliser un index
-      if (!suffix) {
-        const index = group.findIndex(r => r === row);
-        suffix = `v${index + 1}`;
+      // Si pas de préfixe trouvé, utiliser le SKU original raccourci
+      if (!prefix) {
+        const originalSku = row.sku?.toString().trim() || '';
+        // Extraire les chiffres significatifs du SKU original
+        const numbers = originalSku.replace(/[^0-9]/g, '');
+        prefix = numbers.substring(0, 6) || 'SKU';
       }
 
-      // S'assurer que le SKU final ne dépasse pas 50 caractères
-      const baseSku = sku;
-      const maxSuffixLength = 50 - baseSku.length - 1; // -1 pour le tiret
-      if (suffix.length > maxSuffixLength) {
-        // Tronquer le suffixe et ajouter un hash court pour l'unicité
-        const index = group.findIndex(r => r === row);
-        suffix = `v${index + 1}`;
+      // Construire le préfixe final
+      if (code) {
+        return `${prefix}-${code}`;
+      }
+      return prefix;
+    };
+
+    // Résoudre les doublons
+    const resolvedData = data.map(row => {
+      const sku = row.sku?.toString().trim();
+
+      // Si pas de doublon, garder tel quel
+      if (!sku || !duplicateSKUs.includes(sku)) {
+        return row;
+      }
+
+      // Extraire le préfixe intelligent
+      const prefix = extractPrefix(row);
+
+      // Générer un SKU unique avec numéro séquentiel
+      let newSku: string;
+      do {
+        // Format: PREFIX-XXXX (ex: 20-VAP-0001)
+        const seqNum = globalCounter.toString().padStart(4, '0');
+        newSku = `${prefix}-${seqNum}`;
+        globalCounter++;
+      } while (usedSKUs.has(newSku));
+
+      // Marquer comme utilisé
+      usedSKUs.add(newSku);
+
+      // S'assurer que le SKU ne dépasse pas 50 caractères
+      if (newSku.length > 50) {
+        // Fallback sur un format plus court
+        let shortSku: string;
+        do {
+          shortSku = `SKU-${globalCounter.toString().padStart(6, '0')}`;
+          globalCounter++;
+        } while (usedSKUs.has(shortSku));
+        newSku = shortSku;
+        usedSKUs.add(newSku);
       }
 
       return {
         ...row,
-        sku: `${baseSku}-${suffix}`
+        sku: newSku
       };
     });
 
-    console.log('Resolved duplicates sample:', resolvedData.slice(0, 3).map(r => r.sku));
+    console.log('Resolved duplicates sample:', resolvedData.slice(0, 5).map(r => r.sku));
+    console.log('Total unique SKUs generated:', usedSKUs.size);
     return resolvedData;
   };
 
