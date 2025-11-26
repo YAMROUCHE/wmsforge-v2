@@ -31,7 +31,6 @@ export default function CSVImportModal({ onClose }: CSVImportModalProps) {
   const { addNotification } = useNotifications();
   const [file, setFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [importProgress, setImportProgress] = useState(0); // Progression 0-100
   const [parsedRows, setParsedRows] = useState<ProductRow[]>([]);
   const [showPreview, setShowPreview] = useState(false);
   const [result, setResult] = useState<{
@@ -45,6 +44,12 @@ export default function CSVImportModal({ onClose }: CSVImportModalProps) {
   const [sourceColumns, setSourceColumns] = useState<string[]>([]);
   const [columnMapping, setColumnMapping] = useState<ColumnMapping>({});
   const [rawData, setRawData] = useState<any[]>([]);
+
+  // Résolution des doublons de SKU
+  const [showDuplicateResolver, setShowDuplicateResolver] = useState(false);
+  const [duplicateSKUs, setDuplicateSKUs] = useState<string[]>([]);
+  const [skuCombinationColumns, setSkuCombinationColumns] = useState<string[]>([]);
+  const [mappedDataForDuplicates, setMappedDataForDuplicates] = useState<any[]>([]);
 
   // Colonnes cibles attendues
   const targetColumns = [
@@ -275,117 +280,74 @@ export default function CSVImportModal({ onClose }: CSVImportModalProps) {
       .map(([sku, _]) => sku);
   };
 
-  // Résolution AUTOMATIQUE des doublons avec numéro séquentiel (garantit 0 doublon)
-  // Format : {PREFIX}-{CODE}-{XXXX} où XXXX est un numéro séquentiel
+  // Résolution AUTOMATIQUE des doublons : trouve les colonnes qui différencient les variantes
   const autoResolveDuplicates = (data: any[], duplicateSKUs: string[]): any[] => {
-    // Compteur global pour garantir l'unicité
-    let globalCounter = 1;
-
-    // Map pour tracker les SKUs déjà utilisés
-    const usedSKUs = new Set<string>();
-
-    // D'abord, collecter tous les SKUs non-dupliqués
+    // Grouper les lignes par SKU
+    const groupedBySKU = new Map<string, any[]>();
     data.forEach(row => {
       const sku = row.sku?.toString().trim();
-      if (sku && !duplicateSKUs.includes(sku)) {
-        usedSKUs.add(sku);
+      if (sku && duplicateSKUs.includes(sku)) {
+        if (!groupedBySKU.has(sku)) {
+          groupedBySKU.set(sku, []);
+        }
+        groupedBySKU.get(sku)!.push(row);
       }
     });
 
-    console.log('Resolving', duplicateSKUs.length, 'duplicate SKU groups');
+    console.log('Grouped duplicates:', groupedBySKU.size, 'unique SKUs with duplicates');
 
-    // Fonction pour extraire un préfixe intelligent depuis les données
-    const extractPrefix = (row: any): string => {
-      // Chercher une colonne de type "groupe" ou "catégorie" pour le préfixe
-      const groupColumns = ['artgrp', 'art grp', 'groupe', 'group', 'category', 'categorie', 'cat'];
-      const descColumns = ['description', 'desc', 'name', 'nom', 'designation', 'libelle'];
-
-      let prefix = '';
-      let code = '';
-
-      // 1. Chercher un groupe/catégorie (ex: "20")
-      for (const colName of Object.keys(row)) {
-        if (groupColumns.some(g => colName.toLowerCase().includes(g))) {
-          const val = row[colName]?.toString().trim();
-          if (val && val.length <= 10) {
-            prefix = val.replace(/[^a-zA-Z0-9]/g, '').substring(0, 10);
-            break;
-          }
-        }
-      }
-
-      // 2. Chercher un code depuis la description (3 premières lettres du premier mot)
-      for (const colName of Object.keys(row)) {
-        if (descColumns.some(d => colName.toLowerCase().includes(d))) {
-          const val = row[colName]?.toString().trim();
-          if (val) {
-            // Prendre les 3 premières lettres du premier mot
-            const firstWord = val.split(/\s+/)[0] || '';
-            code = firstWord.replace(/[^a-zA-Z]/g, '').substring(0, 3).toUpperCase();
-            break;
-          }
-        }
-      }
-
-      // Si pas de préfixe trouvé, utiliser le SKU original raccourci
-      if (!prefix) {
-        const originalSku = row.sku?.toString().trim() || '';
-        // Extraire les chiffres significatifs du SKU original
-        const numbers = originalSku.replace(/[^0-9]/g, '');
-        prefix = numbers.substring(0, 6) || 'SKU';
-      }
-
-      // Construire le préfixe final
-      if (code) {
-        return `${prefix}-${code}`;
-      }
-      return prefix;
-    };
-
-    // Résoudre les doublons
+    // Pour chaque groupe de doublons, trouver les colonnes qui varient
     const resolvedData = data.map(row => {
       const sku = row.sku?.toString().trim();
-
-      // Si pas de doublon, garder tel quel
       if (!sku || !duplicateSKUs.includes(sku)) {
+        // Pas un doublon, garder tel quel
         return row;
       }
 
-      // Extraire le préfixe intelligent
-      const prefix = extractPrefix(row);
+      const group = groupedBySKU.get(sku)!;
+      if (group.length === 1) {
+        // Seule occurrence, pas de doublon finalement
+        return row;
+      }
 
-      // Générer un SKU unique avec numéro séquentiel
-      let newSku: string;
-      do {
-        // Format: PREFIX-XXXX (ex: 20-VAP-0001)
-        const seqNum = globalCounter.toString().padStart(4, '0');
-        newSku = `${prefix}-${seqNum}`;
-        globalCounter++;
-      } while (usedSKUs.has(newSku));
+      // Trouver les colonnes qui varient dans ce groupe
+      const varyingColumns: string[] = [];
+      const allColumns = Object.keys(row).filter(col => col !== 'sku');
 
-      // Marquer comme utilisé
-      usedSKUs.add(newSku);
+      for (const col of allColumns) {
+        const values = new Set(group.map(r => r[col]?.toString().trim() || ''));
+        if (values.size > 1) {
+          // Cette colonne a des valeurs différentes dans le groupe
+          varyingColumns.push(col);
+        }
+      }
 
-      // S'assurer que le SKU ne dépasse pas 50 caractères
-      if (newSku.length > 50) {
-        // Fallback sur un format plus court
-        let shortSku: string;
-        do {
-          shortSku = `SKU-${globalCounter.toString().padStart(6, '0')}`;
-          globalCounter++;
-        } while (usedSKUs.has(shortSku));
-        newSku = shortSku;
-        usedSKUs.add(newSku);
+      console.log(`SKU ${sku}: found ${varyingColumns.length} varying columns:`, varyingColumns.slice(0, 3));
+
+      // Créer un suffixe unique basé sur les colonnes qui varient
+      let suffix = '';
+      if (varyingColumns.length > 0) {
+        // Utiliser les colonnes qui varient (max 3 pour ne pas avoir des SKUs trop longs)
+        const columnsToUse = varyingColumns.slice(0, 3);
+        suffix = columnsToUse
+          .map(col => row[col]?.toString().trim() || '')
+          .filter(val => val !== '')
+          .join('-');
+      }
+
+      // Si aucune colonne ne varie OU si le suffixe est vide, utiliser un index
+      if (!suffix) {
+        const index = group.findIndex(r => r === row);
+        suffix = `variant-${index + 1}`;
       }
 
       return {
         ...row,
-        sku: newSku
+        sku: `${sku}-${suffix}`
       };
     });
 
-    console.log('Resolved duplicates sample:', resolvedData.slice(0, 5).map(r => r.sku));
-    console.log('Total unique SKUs generated:', usedSKUs.size);
+    console.log('Resolved duplicates sample:', resolvedData.slice(0, 3).map(r => r.sku));
     return resolvedData;
   };
 
@@ -451,6 +413,50 @@ export default function CSVImportModal({ onClose }: CSVImportModalProps) {
     });
   };
 
+  // Résoudre les doublons en combinant le SKU avec d'autres colonnes
+  const handleResolveDuplicates = () => {
+    if (skuCombinationColumns.length === 0) {
+      addNotification({
+        type: 'error',
+        title: 'Sélection requise',
+        message: 'Veuillez sélectionner au moins une colonne pour différencier les variantes'
+      });
+      return;
+    }
+
+    // Créer des SKUs uniques en combinant avec les colonnes sélectionnées
+    const dataWithUniqueSKUs = mappedDataForDuplicates.map(row => {
+      const baseSKU = row.sku?.toString().trim() || '';
+      const suffix = skuCombinationColumns
+        .map(col => row[col]?.toString().trim() || '')
+        .filter(val => val !== '')
+        .join('-');
+
+      return {
+        ...row,
+        sku: suffix ? `${baseSKU}-${suffix}` : baseSKU
+      };
+    });
+
+    // Valider chaque ligne
+    const validatedRows = dataWithUniqueSKUs.map((row, index) =>
+      validateRow(row, index + 2)
+    );
+
+    setParsedRows(validatedRows);
+    setShowDuplicateResolver(false);
+    setShowPreview(true);
+
+    const errorCount = validatedRows.filter(r => r.status === 'error').length;
+    const validCount = validatedRows.filter(r => r.status === 'valid').length;
+
+    addNotification({
+      type: errorCount > 0 ? 'warning' : 'success',
+      title: 'SKUs uniques créés',
+      message: `${validCount} ligne(s) valide(s), ${errorCount} erreur(s)`
+    });
+  };
+
   const handleImport = async () => {
     if (!file || parsedRows.length === 0) return;
 
@@ -466,42 +472,32 @@ export default function CSVImportModal({ onClose }: CSVImportModalProps) {
     }
 
     setIsLoading(true);
-    setImportProgress(0);
     setResult(null);
 
     try {
       const products = validRows.map(r => r.product!);
 
-      // Import par batch de 200 produits (optimisé côté serveur)
-      const BATCH_SIZE = 200;
+      // Import par batch de 50 produits à la fois pour éviter les timeouts
+      const BATCH_SIZE = 50;
       let totalCreated = 0;
       let totalFailed = 0;
       const allErrors: string[] = [];
-      const totalBatches = Math.ceil(products.length / BATCH_SIZE);
 
       for (let i = 0; i < products.length; i += BATCH_SIZE) {
         const batch = products.slice(i, i + BATCH_SIZE);
-        const batchNum = Math.floor(i / BATCH_SIZE) + 1;
-        console.log(`Importing batch ${batchNum}/${totalBatches}: ${batch.length} products`);
-
-        // Mettre à jour la progression
-        setImportProgress(Math.round((batchNum / totalBatches) * 100));
+        console.log(`Importing batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(products.length / BATCH_SIZE)}: ${batch.length} products`);
 
         try {
           const batchResult = await importProductsCSV(batch);
           totalCreated += batchResult.created;
           totalFailed += batchResult.failed;
-          if (batchResult.errors) {
-            allErrors.push(...batchResult.errors.slice(0, 5)); // Limiter les erreurs affichées
-          }
+          allErrors.push(...batchResult.errors);
         } catch (error) {
           console.error('Batch import failed:', error);
           totalFailed += batch.length;
-          allErrors.push(`Batch ${batchNum}: Échec de connexion`);
+          allErrors.push(`Batch ${Math.floor(i / BATCH_SIZE) + 1}: Failed to import`);
         }
       }
-
-      setImportProgress(100);
 
       const importResult = {
         created: totalCreated,
@@ -734,6 +730,102 @@ export default function CSVImportModal({ onClose }: CSVImportModalProps) {
             </div>
           )}
 
+          {/* Duplicate SKU Resolver */}
+          {showDuplicateResolver && duplicateSKUs.length > 0 && (
+            <div className="border border-yellow-200 bg-yellow-50 rounded-lg overflow-hidden">
+              <div className="bg-yellow-100 px-4 py-3 border-b border-yellow-200">
+                <h3 className="font-medium text-yellow-900 flex items-center gap-2">
+                  <AlertCircle className="w-5 h-5" />
+                  SKUs en double détectés
+                </h3>
+                <p className="text-sm text-yellow-700 mt-1">
+                  {duplicateSKUs.length} SKU(s) apparaissent plusieurs fois. Sélectionnez des colonnes additionnelles pour créer des SKUs uniques (ex: taille, couleur).
+                </p>
+              </div>
+              <div className="p-4 bg-white">
+                <div className="mb-4">
+                  <h4 className="text-sm font-medium text-gray-900 mb-2">Exemples de SKUs en double:</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {duplicateSKUs.slice(0, 5).map((sku, i) => (
+                      <span key={i} className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded text-sm font-mono">
+                        {sku}
+                      </span>
+                    ))}
+                    {duplicateSKUs.length > 5 && (
+                      <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded text-sm">
+                        +{duplicateSKUs.length - 5} autres
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="border-t border-gray-200 pt-4 mb-4">
+                  <h4 className="text-sm font-medium text-gray-900 mb-3">
+                    Sélectionnez les colonnes pour différencier les variantes:
+                  </h4>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    {mappedDataForDuplicates.length > 0 && Object.keys(mappedDataForDuplicates[0] || {}).map((col) => {
+                      const isSelected = skuCombinationColumns.includes(col);
+                      return (
+                        <label
+                          key={col}
+                          className={`flex items-center gap-2 px-3 py-2 border rounded-lg cursor-pointer transition-colors ${
+                            isSelected
+                              ? 'border-blue-500 bg-blue-50 text-blue-900'
+                              : 'border-gray-300 bg-white hover:border-gray-400'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSkuCombinationColumns([...skuCombinationColumns, col]);
+                              } else {
+                                setSkuCombinationColumns(skuCombinationColumns.filter(c => c !== col));
+                              }
+                            }}
+                            className="rounded text-blue-600"
+                          />
+                          <span className="text-sm font-mono">{col}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {skuCombinationColumns.length > 0 && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                    <p className="text-sm text-blue-900">
+                      <strong>Aperçu du format:</strong> 400.63010.010-{skuCombinationColumns.map(() => 'XXX').join('-')}
+                    </p>
+                    <p className="text-xs text-blue-700 mt-1">
+                      Les colonnes sélectionnées seront ajoutées au SKU: {skuCombinationColumns.join(', ')}
+                    </p>
+                  </div>
+                )}
+
+                <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                  <Button variant="ghost" onClick={() => {
+                    setShowDuplicateResolver(false);
+                    setShowMapping(true);
+                    setDuplicateSKUs([]);
+                    setSkuCombinationColumns([]);
+                    setMappedDataForDuplicates([]);
+                  }}>
+                    Retour au mapping
+                  </Button>
+                  <Button
+                    onClick={handleResolveDuplicates}
+                    disabled={skuCombinationColumns.length === 0}
+                  >
+                    Créer SKUs uniques
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Preview */}
           {showPreview && parsedRows.length > 0 && (
             <div className="border border-gray-200 rounded-lg overflow-hidden">
@@ -856,12 +948,7 @@ export default function CSVImportModal({ onClose }: CSVImportModalProps) {
               onClick={handleImport}
               disabled={!file || isLoading || validCount === 0}
             >
-              {isLoading ? (
-                <span className="flex items-center gap-2">
-                  <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
-                  Import {importProgress}%
-                </span>
-              ) : `Importer ${validCount} produit(s)`}
+              {isLoading ? 'Import en cours...' : `Importer ${validCount} produit(s)`}
             </Button>
           </div>
         </div>

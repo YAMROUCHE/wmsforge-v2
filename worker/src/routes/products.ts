@@ -95,7 +95,7 @@ app.post('/', async (c) => {
   }
 });
 
-// POST /api/products/import-csv - Import en masse via CSV
+// POST /api/products/import-csv - Import en masse via CSV (optimisé batch)
 app.post('/import-csv', async (c) => {
   try {
     const db = drizzle(c.env.DB);
@@ -112,49 +112,81 @@ app.post('/import-csv', async (c) => {
       errors: [] as string[]
     };
 
-    // Process each product
+    const now = new Date().toISOString();
+
+    // Préparer tous les produits valides pour insertion batch
+    const validProducts: any[] = [];
+    const skuSet = new Set<string>();
+
     for (const product of body.products) {
-      try {
-        // Parse unitPrice from string (cents) to integer
-        const price = product.unitPrice ? parseInt(product.unitPrice) : null;
-        const reorderPoint = product.reorderPoint ? parseInt(product.reorderPoint) : 10;
-
-        const newProduct = {
-          organizationId,
-          sku: product.sku,
-          name: product.name,
-          description: product.description || null,
-          category: product.category || null,
-          price: price,
-          cost: null,
-          weight: null,
-          length: null,
-          width: null,
-          height: null,
-          volume: null,
-          abcClass: 'C',
-          velocityScore: 20,
-          minStock: reorderPoint,
-          maxStock: null,
-          reorderPoint: reorderPoint,
-          safetyStock: 0,
-          fragile: 0,
-          stackable: 1,
-          status: 'active',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
-
-        await db.insert(products).values(newProduct);
-        results.created++;
-      } catch (error: any) {
+      // Validation basique
+      if (!product.sku || !product.name) {
         results.failed++;
-        const errorMsg = error.message || 'Unknown error';
-        // Check if it's a duplicate SKU error
-        if (errorMsg.includes('UNIQUE') || errorMsg.includes('unique')) {
-          results.errors.push(`SKU ${product.sku}: Already exists`);
-        } else {
-          results.errors.push(`SKU ${product.sku}: ${errorMsg}`);
+        results.errors.push(`Ligne invalide: SKU ou Nom manquant`);
+        continue;
+      }
+
+      // Vérifier les doublons dans le même batch
+      if (skuSet.has(product.sku)) {
+        results.failed++;
+        results.errors.push(`SKU ${product.sku}: Doublon dans le fichier`);
+        continue;
+      }
+      skuSet.add(product.sku);
+
+      const price = product.unitPrice ? parseInt(product.unitPrice) : null;
+      const reorderPoint = product.reorderPoint ? parseInt(product.reorderPoint) : 10;
+
+      validProducts.push({
+        organizationId,
+        sku: product.sku,
+        name: product.name,
+        description: product.description || null,
+        category: product.category || null,
+        price: price,
+        cost: null,
+        weight: null,
+        length: null,
+        width: null,
+        height: null,
+        volume: null,
+        abcClass: 'C',
+        velocityScore: 20,
+        minStock: reorderPoint,
+        maxStock: null,
+        reorderPoint: reorderPoint,
+        safetyStock: 0,
+        fragile: 0,
+        stackable: 1,
+        status: 'active',
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+
+    // Insertion en batch de 100 produits (limite SQLite)
+    const BATCH_SIZE = 100;
+    for (let i = 0; i < validProducts.length; i += BATCH_SIZE) {
+      const batch = validProducts.slice(i, i + BATCH_SIZE);
+      try {
+        // Insertion batch avec onConflictDoNothing pour ignorer les doublons
+        await db.insert(products).values(batch).onConflictDoNothing();
+        results.created += batch.length;
+      } catch (error: any) {
+        // Si batch échoue, essayer un par un pour identifier les erreurs
+        for (const product of batch) {
+          try {
+            await db.insert(products).values(product).onConflictDoNothing();
+            results.created++;
+          } catch (singleError: any) {
+            results.failed++;
+            const errorMsg = singleError.message || 'Unknown error';
+            if (errorMsg.includes('UNIQUE') || errorMsg.includes('unique')) {
+              results.errors.push(`SKU ${product.sku}: Already exists`);
+            } else {
+              results.errors.push(`SKU ${product.sku}: ${errorMsg}`);
+            }
+          }
         }
       }
     }
