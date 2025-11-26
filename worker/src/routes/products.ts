@@ -13,26 +13,45 @@ const app = new Hono<{
 // Apply auth middleware to all routes
 app.use('/*', authMiddleware);
 
-// GET /api/products - Liste des produits
+// GET /api/products - Liste des produits avec pagination
 app.get('/', async (c) => {
   try {
     const db = drizzle(c.env.DB);
     const { organizationId } = getAuthUser(c);
-    
-    // Filter by organization
+
+    // Paramètres de pagination
+    const page = parseInt(c.req.query('page') || '1');
+    const limit = Math.min(parseInt(c.req.query('limit') || '50'), 100); // Max 100
+    const offset = (page - 1) * limit;
+    const search = c.req.query('search') || '';
+    const category = c.req.query('category') || '';
+
+    // Construire les conditions
+    let conditions = eq(products.organizationId, organizationId);
+
+    // Compter le total
+    const countResult = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(products)
+      .where(conditions);
+    const total = countResult[0]?.count || 0;
+
+    // Récupérer les produits paginés
     const items = await db
       .select()
       .from(products)
-      .where(eq(products.organizationId, organizationId))
-      .all();
-    
+      .where(conditions)
+      .orderBy(desc(products.createdAt))
+      .limit(limit)
+      .offset(offset);
+
     return c.json({
       items: items || [],
       pagination: {
-        page: 1,
-        limit: 20,
-        total: items.length,
-        totalPages: 1
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
       }
     });
   } catch (error) {

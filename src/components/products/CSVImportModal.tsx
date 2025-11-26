@@ -622,27 +622,13 @@ export default function CSVImportModal({ onClose }: CSVImportModalProps) {
               className="hidden"
               id="file-upload"
               disabled={isLoading}
-              ref={(input) => {
-                if (input) {
-                  (window as any).fileInput = input;
-                }
-              }}
             />
-            <button
-              type="button"
-              onClick={() => {
-                console.log('Button clicked!');
-                const input = document.getElementById('file-upload') as HTMLInputElement;
-                if (input) {
-                  console.log('Triggering input click');
-                  input.click();
-                }
-              }}
-              disabled={isLoading}
+            <label
+              htmlFor="file-upload"
               className={`inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg font-medium text-gray-700 bg-white hover:bg-gray-50 cursor-pointer ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               {file ? 'Changer de fichier' : 'Parcourir'}
-            </button>
+            </label>
           </div>
 
           {/* Column Mapping */}
