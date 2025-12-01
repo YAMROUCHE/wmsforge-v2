@@ -3,6 +3,7 @@ import { Package, Plus, ArrowRight, RefreshCw, TrendingUp, Box } from 'lucide-re
 import { Button } from '../components/ui/Button';
 import ExportButton from '../components/ExportButton';
 import { logger } from '@/lib/logger';
+import { fetchAPI } from '@/lib/api';
 
 interface InventoryItem {
   id: number;
@@ -44,11 +45,7 @@ interface Movement {
 export default function Inventory() {
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
-  const [locations, _setLocations] = useState<Location[]>([
-    { id: 1, code: 'A-01-01', name: 'Zone A - Allée 1 - Rack 1' },
-    { id: 2, code: 'A-01-02', name: 'Zone A - Allée 1 - Rack 2' },
-    { id: 3, code: 'B-01-01', name: 'Zone B - Allée 1 - Rack 1' }
-  ]);
+  const [locations, setLocations] = useState<Location[]>([]);
   const [movements, setMovements] = useState<Movement[]>([]);
   const [loading, setLoading] = useState(true);
   const [showReceiveModal, setShowReceiveModal] = useState(false);
@@ -58,7 +55,7 @@ export default function Inventory() {
   // Formulaires
   const [receiveForm, setReceiveForm] = useState({
     productId: '',
-    locationId: '1',
+    locationId: '',
     quantity: '',
     lotNumber: '',
     reference: ''
@@ -81,17 +78,15 @@ export default function Inventory() {
   useEffect(() => {
     fetchInventory();
     fetchProducts();
+    fetchLocations();
     fetchMovements();
   }, []);
 
   const fetchInventory = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:8787/api/inventory');
-      if (response.ok) {
-        const data = await response.json();
-        setInventory(data.items || []);
-      }
+      const data = await fetchAPI<{ items: InventoryItem[] }>('/api/inventory');
+      setInventory(data.items || []);
     } catch (error) {
       logger.error('Erreur chargement inventaire:', error);
     } finally {
@@ -101,23 +96,26 @@ export default function Inventory() {
 
   const fetchProducts = async () => {
     try {
-      const response = await fetch('http://localhost:8787/api/products');
-      if (response.ok) {
-        const data = await response.json();
-        setProducts(data.items || []);
-      }
+      const data = await fetchAPI<{ items: Product[] }>('/api/products?limit=1000');
+      setProducts(data.items || []);
     } catch (error) {
       logger.error('Erreur chargement produits:', error);
     }
   };
 
+  const fetchLocations = async () => {
+    try {
+      const data = await fetchAPI<{ locations: Location[] }>('/api/locations');
+      setLocations(data.locations || []);
+    } catch (error) {
+      logger.error('Erreur chargement emplacements:', error);
+    }
+  };
+
   const fetchMovements = async () => {
     try {
-      const response = await fetch('http://localhost:8787/api/inventory/movements');
-      if (response.ok) {
-        const data = await response.json();
-        setMovements(data.movements || []);
-      }
+      const data = await fetchAPI<{ movements: Movement[] }>('/api/inventory/movements');
+      setMovements(data.movements || []);
     } catch (error) {
       logger.error('Erreur chargement mouvements:', error);
     }
@@ -126,9 +124,8 @@ export default function Inventory() {
   const handleReceive = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await fetch('http://localhost:8787/api/inventory/receive', {
+      await fetchAPI('/api/inventory/receive', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           productId: parseInt(receiveForm.productId),
           locationId: parseInt(receiveForm.locationId),
@@ -138,12 +135,10 @@ export default function Inventory() {
         })
       });
 
-      if (response.ok) {
-        setShowReceiveModal(false);
-        setReceiveForm({ productId: '', locationId: '1', quantity: '', lotNumber: '', reference: '' });
-        fetchInventory();
-        fetchMovements();
-      }
+      setShowReceiveModal(false);
+      setReceiveForm({ productId: '', locationId: '', quantity: '', lotNumber: '', reference: '' });
+      fetchInventory();
+      fetchMovements();
     } catch (error) {
       logger.error('Erreur réception:', error);
     }
@@ -152,9 +147,8 @@ export default function Inventory() {
   const handleMove = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await fetch('http://localhost:8787/api/inventory/move', {
+      await fetchAPI('/api/inventory/move', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           fromInventoryId: parseInt(moveForm.fromInventoryId),
           toLocationId: parseInt(moveForm.toLocationId),
@@ -163,12 +157,10 @@ export default function Inventory() {
         })
       });
 
-      if (response.ok) {
-        setShowMoveModal(false);
-        setMoveForm({ fromInventoryId: '', toLocationId: '', quantity: '', reason: '' });
-        fetchInventory();
-        fetchMovements();
-      }
+      setShowMoveModal(false);
+      setMoveForm({ fromInventoryId: '', toLocationId: '', quantity: '', reason: '' });
+      fetchInventory();
+      fetchMovements();
     } catch (error) {
       logger.error('Erreur déplacement:', error);
     }
@@ -177,9 +169,8 @@ export default function Inventory() {
   const handleAdjust = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await fetch('http://localhost:8787/api/inventory/adjust', {
+      await fetchAPI('/api/inventory/adjust', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           inventoryId: parseInt(adjustForm.inventoryId),
           newQuantity: parseInt(adjustForm.newQuantity),
@@ -188,12 +179,10 @@ export default function Inventory() {
         })
       });
 
-      if (response.ok) {
-        setShowAdjustModal(false);
-        setAdjustForm({ inventoryId: '', newQuantity: '', reason: '', notes: '' });
-        fetchInventory();
-        fetchMovements();
-      }
+      setShowAdjustModal(false);
+      setAdjustForm({ inventoryId: '', newQuantity: '', reason: '', notes: '' });
+      fetchInventory();
+      fetchMovements();
     } catch (error) {
       logger.error('Erreur ajustement:', error);
     }
@@ -435,6 +424,7 @@ export default function Inventory() {
                   onChange={(e) => setReceiveForm({...receiveForm, locationId: e.target.value})}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                 >
+                  <option value="">Sélectionner un emplacement</option>
                   {locations.map(location => (
                     <option key={location.id} value={location.id}>
                       {location.code} - {location.name}
@@ -487,7 +477,7 @@ export default function Inventory() {
                   variant="secondary"
                   onClick={() => {
                     setShowReceiveModal(false);
-                    setReceiveForm({ productId: '', locationId: '1', quantity: '', lotNumber: '', reference: '' });
+                    setReceiveForm({ productId: '', locationId: '', quantity: '', lotNumber: '', reference: '' });
                   }}
                 >
                   Annuler

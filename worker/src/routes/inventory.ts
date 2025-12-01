@@ -1,4 +1,4 @@
-import { optionalAuthMiddleware, getAuthUser } from '../middleware/auth';
+import { authMiddleware, getAuthUser } from '../middleware/auth';
 import { Hono } from 'hono';
 
 const app = new Hono<{
@@ -7,14 +7,13 @@ const app = new Hono<{
   };
 }>();
 
-app.use('/*', optionalAuthMiddleware);
+app.use('/*', authMiddleware);
 
 // GET /api/inventory
 app.get('/', async (c) => {
-  const authUser = c.get("user");
-  const organizationId = authUser?.organizationId || 1;
+  const { organizationId } = getAuthUser(c);
   try {
-    const result = await c.env.DB.prepare('SELECT * FROM inventory').all();
+    const result = await c.env.DB.prepare('SELECT * FROM inventory WHERE organization_id = ?').bind(organizationId).all();
     return c.json({ items: result.results || [] });
   } catch (error) {
     console.error('Error fetching inventory:', error);
@@ -24,8 +23,7 @@ app.get('/', async (c) => {
 
 // POST /api/inventory/receive - VERSION SIMPLIFIÉE
 app.post('/receive', async (c) => {
-  const authUser = c.get("user");
-  const organizationId = authUser?.organizationId || 1;
+  const { organizationId, userId } = getAuthUser(c);
   try {
     const body = await c.req.json();
     
@@ -53,7 +51,7 @@ app.post('/receive', async (c) => {
     await c.env.DB.prepare(`
       INSERT INTO stock_movements (organization_id, type, product_id, location_id, quantity, user_id, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).bind(organizationId, 'RECEIVE', body.productId, body.locationId, body.quantity, 1, new Date().toISOString()).run();
+    `).bind(organizationId, 'RECEIVE', body.productId, body.locationId, body.quantity, userId, new Date().toISOString()).run();
     
     return c.json({ message: 'Stock received successfully', quantity: body.quantity });
   } catch (error) {

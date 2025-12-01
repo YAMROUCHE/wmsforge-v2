@@ -1,4 +1,4 @@
-import { optionalAuthMiddleware, getAuthUser } from '../middleware/auth';
+import { authMiddleware, getAuthUser } from '../middleware/auth';
 import { Hono } from 'hono';
 
 const app = new Hono<{
@@ -7,17 +7,16 @@ const app = new Hono<{
   };
 }>();
 
-app.use('/*', optionalAuthMiddleware);
+app.use('/*', authMiddleware);
 
 // GET /api/locations
 app.get('/', async (c) => {
-  const authUser = c.get("user");
-  const organizationId = authUser?.organizationId || 1;
+  const { organizationId } = getAuthUser(c);
   try {
     const result = await c.env.DB.prepare(
-      'SELECT * FROM locations'
-    ).all();
-    
+      'SELECT * FROM locations WHERE organization_id = ?'
+    ).bind(organizationId).all();
+
     return c.json({ locations: result.results || [] });
   } catch (error) {
     console.error('Error fetching locations:', error);
@@ -27,8 +26,7 @@ app.get('/', async (c) => {
 
 // POST /api/locations - VERSION SIMPLIFIÉE
 app.post('/', async (c) => {
-  const authUser = c.get("user");
-  const organizationId = authUser?.organizationId || 1;
+  const { organizationId } = getAuthUser(c);
   try {
     const body = await c.req.json();
 
