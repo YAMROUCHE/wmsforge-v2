@@ -139,6 +139,59 @@ app.post('/move', async (c) => {
   }
 });
 
+// POST /api/inventory/adjust - Ajuster la quantité en stock
+app.post('/adjust', async (c) => {
+  const { organizationId, userId } = getAuthUser(c);
+  try {
+    const body = await c.req.json();
+    const { inventoryId, newQuantity, reason, notes } = body;
+
+    // Récupérer l'inventaire actuel
+    const current = await c.env.DB.prepare(
+      'SELECT * FROM inventory WHERE id = ? AND organization_id = ?'
+    ).bind(inventoryId, organizationId).first() as any;
+
+    if (!current) {
+      return c.json({ error: 'Stock non trouvé' }, 404);
+    }
+
+    const oldQuantity = current.quantity;
+    const difference = newQuantity - oldQuantity;
+
+    // Mettre à jour la quantité
+    await c.env.DB.prepare(`
+      UPDATE inventory
+      SET quantity = ?, updated_at = ?
+      WHERE id = ?
+    `).bind(newQuantity, new Date().toISOString(), inventoryId).run();
+
+    // Enregistrer le mouvement d'ajustement
+    await c.env.DB.prepare(`
+      INSERT INTO stock_movements (organization_id, type, product_id, location_id, quantity, notes, user_id, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      organizationId,
+      'ADJUST',
+      current.product_id,
+      current.location_id,
+      difference,
+      `${reason || 'Ajustement'}${notes ? ': ' + notes : ''}`,
+      userId,
+      new Date().toISOString()
+    ).run();
+
+    return c.json({
+      message: 'Stock ajusté avec succès',
+      oldQuantity,
+      newQuantity,
+      difference
+    });
+  } catch (error) {
+    console.error('Error adjusting stock:', error);
+    return c.json({ error: 'Failed to adjust stock', details: (error as Error).message }, 500);
+  }
+});
+
 // GET /api/inventory/movements
 app.get('/movements', async (c) => {
   const { organizationId } = getAuthUser(c);
