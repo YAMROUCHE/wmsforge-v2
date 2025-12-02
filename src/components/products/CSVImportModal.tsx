@@ -152,7 +152,7 @@ export default function CSVImportModal({ onClose }: CSVImportModalProps) {
       name: nameStr,
       description: row.description?.toString().trim() || '',
       category: row.category?.toString().trim() || '',
-      unitPrice: row.unitPrice ? (parseFloat(row.unitPrice) * 100).toString() : '',
+      unitPrice: row.unitPrice ? parseFloat(row.unitPrice).toString() : '',
       reorderPoint: row.reorderPoint || '10',
     } : undefined;
 
