@@ -472,33 +472,67 @@ export default function CSVImportModal({ onClose }: CSVImportModalProps) {
     try {
       const products = validRows.map(r => r.product!);
 
-      // Import par batch de 200 produits (optimisé côté serveur)
-      const BATCH_SIZE = 200;
+      // Import OPTIMISÉ pour gros volumes (2000+)
+      const BATCH_SIZE = 500; // Augmenté de 200 à 500
+      const PARALLEL_BATCHES = 3; // Envoyer 3 batches en parallèle
+
       let totalCreated = 0;
       let totalFailed = 0;
       const allErrors: string[] = [];
       const totalBatches = Math.ceil(products.length / BATCH_SIZE);
+      let completedBatches = 0;
 
+      // Créer tous les batches
+      const batches: any[][] = [];
       for (let i = 0; i < products.length; i += BATCH_SIZE) {
-        const batch = products.slice(i, i + BATCH_SIZE);
-        const batchNum = Math.floor(i / BATCH_SIZE) + 1;
+        batches.push(products.slice(i, i + BATCH_SIZE));
+      }
+
+      // Fonction pour traiter un batch
+      const processBatch = async (batch: any[], batchNum: number) => {
         console.log(`Importing batch ${batchNum}/${totalBatches}: ${batch.length} products`);
-
-        // Mettre à jour la progression
-        setImportProgress(Math.round((batchNum / totalBatches) * 100));
-
         try {
           const batchResult = await importProductsCSV(batch);
-          totalCreated += batchResult.created;
-          totalFailed += batchResult.failed;
-          if (batchResult.errors) {
-            allErrors.push(...batchResult.errors.slice(0, 5)); // Limiter les erreurs affichées
-          }
+          return {
+            created: batchResult.created,
+            failed: batchResult.failed,
+            errors: batchResult.errors || []
+          };
         } catch (error) {
-          console.error('Batch import failed:', error);
-          totalFailed += batch.length;
-          allErrors.push(`Batch ${batchNum}: Échec de connexion`);
+          console.error(`Batch ${batchNum} import failed:`, error);
+          return {
+            created: 0,
+            failed: batch.length,
+            errors: [`Batch ${batchNum}: Échec de connexion`]
+          };
         }
+      };
+
+      // Traiter les batches en parallèle (par groupe de PARALLEL_BATCHES)
+      for (let i = 0; i < batches.length; i += PARALLEL_BATCHES) {
+        const currentBatches = batches.slice(i, i + PARALLEL_BATCHES);
+        const batchPromises = currentBatches.map((batch, index) =>
+          processBatch(batch, i + index + 1)
+        );
+
+        // Attendre que tous les batches du groupe soient terminés
+        const results = await Promise.all(batchPromises);
+
+        // Agréger les résultats
+        results.forEach(result => {
+          totalCreated += result.created;
+          totalFailed += result.failed;
+          if (result.errors.length > 0) {
+            allErrors.push(...result.errors.slice(0, 3));
+          }
+          completedBatches++;
+
+          // Mettre à jour la progression
+          const progress = Math.round((completedBatches / totalBatches) * 100);
+          setImportProgress(progress);
+        });
+
+        console.log(`Progress: ${completedBatches}/${totalBatches} batches (${totalCreated} created, ${totalFailed} failed)`);
       }
 
       setImportProgress(100);
@@ -845,7 +879,7 @@ export default function CSVImportModal({ onClose }: CSVImportModalProps) {
               {isLoading ? (
                 <span className="flex items-center gap-2">
                   <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
-                  Import {importProgress}%
+                  Import {importProgress}% ({Math.round(validCount * importProgress / 100)}/{validCount})
                 </span>
               ) : `Importer ${validCount} produit(s)`}
             </Button>
