@@ -62,12 +62,25 @@ app.post('/receive', async (c) => {
 
 // GET /api/inventory/movements
 app.get('/movements', async (c) => {
-  const authUser = c.get("user");
-  const organizationId = authUser?.organizationId || 1;
+  const { organizationId } = getAuthUser(c);
   try {
-    const result = await c.env.DB.prepare(
-      'SELECT * FROM stock_movements ORDER BY created_at DESC LIMIT 50'
-    ).all();
+    const result = await c.env.DB.prepare(`
+      SELECT
+        sm.id,
+        sm.type,
+        sm.quantity,
+        sm.notes,
+        sm.created_at as createdAt,
+        p.sku as productSku,
+        p.name as productName,
+        l.name as locationName
+      FROM stock_movements sm
+      LEFT JOIN products p ON sm.product_id = p.id
+      LEFT JOIN locations l ON sm.location_id = l.id
+      WHERE sm.organization_id = ?
+      ORDER BY sm.created_at DESC
+      LIMIT 50
+    `).bind(organizationId).all();
     return c.json({ movements: result.results || [] });
   } catch (error) {
     console.error('Error fetching movements:', error);
