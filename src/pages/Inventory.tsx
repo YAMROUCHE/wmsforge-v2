@@ -161,8 +161,9 @@ export default function Inventory() {
       setMoveForm({ fromInventoryId: '', toLocationId: '', quantity: '', reason: '' });
       fetchInventory();
       fetchMovements();
-    } catch (error) {
+    } catch (error: any) {
       logger.error('Erreur déplacement:', error);
+      alert(error.message || 'Erreur lors du déplacement du stock');
     }
   };
 
@@ -541,11 +542,17 @@ export default function Inventory() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Quantité *
+                  {moveForm.fromInventoryId && (
+                    <span className="ml-2 text-xs text-gray-500">
+                      (Max: {inventory.find(i => i.id === parseInt(moveForm.fromInventoryId))?.quantityAvailable || 0})
+                    </span>
+                  )}
                 </label>
                 <input
                   type="number"
                   required
                   min="1"
+                  max={moveForm.fromInventoryId ? inventory.find(i => i.id === parseInt(moveForm.fromInventoryId))?.quantityAvailable : undefined}
                   value={moveForm.quantity}
                   onChange={(e) => setMoveForm({...moveForm, quantity: e.target.value})}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg"
