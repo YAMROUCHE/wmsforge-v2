@@ -4,6 +4,7 @@ import { Button } from '../components/ui/Button';
 import ExportButton from '../components/ExportButton';
 import CSVImportModal from '../components/products/CSVImportModal';
 import { logger } from '@/lib/logger';
+import { fetchAPI } from '@/lib/api';
 
 interface Product {
   id: number;
@@ -30,6 +31,10 @@ export default function Products() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalProducts, setTotalProducts] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const ITEMS_PER_PAGE = 100;
   
   // Formulaire nouveau produit
   const [formData, setFormData] = useState<{
@@ -58,25 +63,23 @@ export default function Products() {
     status: 'active'
   });
 
-  // Charger les produits au démarrage
+  // Charger les produits au démarrage et quand la page change
   useEffect(() => {
-    fetchProducts();
-  }, []);
+    fetchProducts(currentPage);
+  }, [currentPage]);
 
-  const fetchProducts = async () => {
+  const fetchProducts = async (page: number = 1) => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:8787/api/products');
-      const data = await response.json();
+      const data = await fetchAPI<{ items: Product[]; pagination: { total: number; totalPages: number } }>(
+        `/api/products?page=${page}&limit=${ITEMS_PER_PAGE}`
+      );
       setProducts(data.items || []);
+      setTotalProducts(data.pagination?.total || 0);
+      setTotalPages(data.pagination?.totalPages || 0);
     } catch (error) {
       logger.error('Erreur chargement produits:', error);
-      // Données de test si l'API ne répond pas
-      setProducts([
-        { id: 1, sku: 'SKU-001', name: 'iPhone 15 Pro', category: 'Electronics', price: 1299, abcClass: 'A', status: 'active', minStock: 5 },
-        { id: 2, sku: 'SKU-002', name: 'MacBook Pro', category: 'Electronics', price: 2499, abcClass: 'A', status: 'active', minStock: 3 },
-        { id: 3, sku: 'SKU-003', name: 'AirPods Pro', category: 'Electronics', price: 279, abcClass: 'B', status: 'active', minStock: 10 },
-      ]);
+      setProducts([]);
     } finally {
       setLoading(false);
     }
@@ -84,29 +87,35 @@ export default function Products() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const productData = {
-      ...formData,
-      price: parseFloat(formData.price) || 0,
-      cost: parseFloat(formData.cost) || 0,
-      weight: parseFloat(formData.weight) || 0,
-      minStock: parseInt(formData.minStock) || 0,
-      maxStock: parseInt(formData.maxStock) || undefined,
+      sku: formData.sku,
+      name: formData.name,
+      description: formData.description || null,
+      category: formData.category || null,
+      price: formData.price ? parseFloat(formData.price) : null,
+      cost: formData.cost ? parseFloat(formData.cost) : null,
+      weight: formData.weight ? parseFloat(formData.weight) : null,
+      minStock: formData.minStock ? parseInt(formData.minStock) : 0,
+      maxStock: formData.maxStock ? parseInt(formData.maxStock) : null,
+      reorderPoint: formData.minStock ? parseInt(formData.minStock) : 10,
+      abcClass: formData.abcClass,
+      status: formData.status,
     };
 
     try {
-      const response = await fetch('http://localhost:8787/api/products', {
-        method: editingProduct ? 'PUT' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const endpoint = editingProduct ? `/api/products/${editingProduct.id}` : '/api/products';
+      const method = editingProduct ? 'PUT' : 'POST';
+
+      await fetchAPI(endpoint, {
+        method,
         body: JSON.stringify(productData),
       });
 
-      if (response.ok) {
-        await fetchProducts();
-        setShowAddModal(false);
-        setEditingProduct(null);
-        resetForm();
-      }
+      await fetchProducts(currentPage);
+      setShowAddModal(false);
+      setEditingProduct(null);
+      resetForm();
     } catch (error) {
       logger.error('Erreur sauvegarde produit:', error);
     }
@@ -244,7 +253,7 @@ export default function Products() {
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
-            <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">{products.length}</div>
+            <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">{totalProducts}</div>
             <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">Produits totaux</div>
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4">
@@ -365,6 +374,48 @@ export default function Products() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                Page {currentPage} sur {totalPages} ({totalProducts} produits)
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Début
+                </button>
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Précédent
+                </button>
+                <span className="px-3 py-1 text-sm bg-blue-600 text-white rounded-lg">
+                  {currentPage}
+                </span>
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Suivant
+                </button>
+                <button
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Fin
+                </button>
+              </div>
             </div>
           )}
         </div>
