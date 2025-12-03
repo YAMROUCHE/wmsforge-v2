@@ -181,7 +181,7 @@ app.get('/me', authMiddleware, async (c) => {
 
     // Get organization details
     const org = await c.env.DB.prepare(
-      `SELECT id, name, address, phone, email
+      `SELECT id, name
        FROM organizations
        WHERE id = ?`
     ).bind(user.organization_id).first() as any;
@@ -197,16 +197,52 @@ app.get('/me', authMiddleware, async (c) => {
       },
       organization: org ? {
         id: org.id,
-        name: org.name,
-        address: org.address,
-        phone: org.phone,
-        email: org.email
+        name: org.name
       } : null
     });
   } catch (error) {
     console.error('Get me error:', error);
     return c.json({
       error: 'Failed to get user',
+      details: (error as Error).message
+    }, 500);
+  }
+});
+
+/**
+ * GET /api/auth/test-token
+ * Generate a test token for organization 3 (dev/test only)
+ */
+app.get('/test-token', async (c) => {
+  try {
+    // Generate JWT for test user
+    const jwtSecret = c.env.JWT_SECRET || 'whsec_a8f3b2c1d4e5f6g7h8i9j0k1l2m3n4o5';
+    const token = await generateJWT(
+      {
+        userId: 3,
+        organizationId: 3,
+        email: 'admin@test.com',
+        role: 'admin'
+      },
+      jwtSecret,
+      86400 * 30 // 30 days
+    );
+
+    return c.json({
+      success: true,
+      token,
+      user: {
+        id: 3,
+        organizationId: 3,
+        email: 'admin@test.com',
+        role: 'admin'
+      },
+      expiresIn: '30 days'
+    });
+  } catch (error) {
+    console.error('Test token error:', error);
+    return c.json({
+      error: 'Failed to generate test token',
       details: (error as Error).message
     }, 500);
   }
