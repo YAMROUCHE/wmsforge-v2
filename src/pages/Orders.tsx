@@ -62,7 +62,13 @@ export default function Orders() {
 
   const fetchProducts = async () => {
     try {
-      const response = await fetch('http://localhost:8787/api/products');
+      const token = localStorage.getItem('wms_auth_token');
+      const API_URL = 'https://wmsforge-api.youssef-amrouche.workers.dev';
+      const response = await fetch(`${API_URL}/api/products`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
       if (response.ok) {
         const data = await response.json();
         setProducts(data.products || []);
