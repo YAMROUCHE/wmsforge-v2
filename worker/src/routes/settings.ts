@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { authMiddleware, getAuthUser } from '../middleware/auth';
 
 const app = new Hono<{
   Bindings: {
@@ -6,11 +7,12 @@ const app = new Hono<{
   };
 }>();
 
+app.use('/*', authMiddleware);
+
 // GET /api/settings - Récupérer tous les settings
 app.get('/', async (c) => {
   try {
-    const userId = 1; // TODO: Récupérer depuis JWT
-    const orgId = 1;
+    const { userId, organizationId } = getAuthUser(c);
 
     // Récupérer profil utilisateur
     const user = await c.env.DB.prepare(
@@ -20,7 +22,7 @@ app.get('/', async (c) => {
     // Récupérer organisation
     const org = await c.env.DB.prepare(
       'SELECT id, name, address, phone, email FROM organizations WHERE id = ?'
-    ).bind(orgId).first();
+    ).bind(organizationId).first();
 
     // Récupérer préférences utilisateur
     let prefs = await c.env.DB.prepare(
@@ -75,7 +77,7 @@ app.get('/', async (c) => {
 // PUT /api/settings/profile - Mettre à jour le profil
 app.put('/profile', async (c) => {
   try {
-    const userId = 1; // TODO: Récupérer depuis JWT
+    const { userId } = getAuthUser(c);
     const body = await c.req.json();
 
     await c.env.DB.prepare(`
@@ -99,7 +101,7 @@ app.put('/profile', async (c) => {
 // PUT /api/settings/organization - Mettre à jour l'organisation
 app.put('/organization', async (c) => {
   try {
-    const orgId = 1;
+    const { organizationId } = getAuthUser(c);
     const body = await c.req.json();
 
     await c.env.DB.prepare(`
@@ -111,7 +113,7 @@ app.put('/organization', async (c) => {
       body.address,
       body.phone,
       body.email,
-      orgId
+      organizationId
     ).run();
 
     return c.json({ message: 'Organization updated successfully' });
@@ -124,7 +126,7 @@ app.put('/organization', async (c) => {
 // PUT /api/settings/notifications - Mettre à jour les notifications
 app.put('/notifications', async (c) => {
   try {
-    const userId = 1; // TODO: Récupérer depuis JWT
+    const { userId } = getAuthUser(c);
     const body = await c.req.json();
 
     await upsertNotificationPreferences(c.env.DB, userId, body);
@@ -139,7 +141,7 @@ app.put('/notifications', async (c) => {
 // PUT /api/settings/appearance - Mettre à jour l'apparence
 app.put('/appearance', async (c) => {
   try {
-    const userId = 1; // TODO: Récupérer depuis JWT
+    const { userId } = getAuthUser(c);
     const body = await c.req.json();
 
     await upsertAppearancePreferences(c.env.DB, userId, body);
