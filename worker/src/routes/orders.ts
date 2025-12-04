@@ -1,4 +1,4 @@
-import { optionalAuthMiddleware, getAuthUser } from '../middleware/auth';
+import { authMiddleware, getAuthUser } from '../middleware/auth';
 import { Hono } from 'hono';
 
 const app = new Hono<{
@@ -7,12 +7,11 @@ const app = new Hono<{
   };
 }>();
 
-app.use('/*', optionalAuthMiddleware);
+app.use('/*', authMiddleware);
 
 // GET /api/orders - Liste toutes les commandes
 app.get('/', async (c) => {
-  const authUser = c.get("user");
-  const organizationId = authUser?.organizationId || 1;
+  const { organizationId } = getAuthUser(c);
   try {
     const result = await c.env.DB.prepare(`
       SELECT
@@ -34,8 +33,7 @@ app.get('/', async (c) => {
 
 // GET /api/orders/stats - Statistiques des commandes
 app.get('/stats', async (c) => {
-  const authUser = c.get("user");
-  const organizationId = authUser?.organizationId || 1;
+  const { organizationId } = getAuthUser(c);
   try {
     const stats = await c.env.DB.prepare(`
       SELECT
@@ -58,8 +56,7 @@ app.get('/stats', async (c) => {
 
 // GET /api/orders/:id - Détails d'une commande avec ses items
 app.get('/:id', async (c) => {
-  const authUser = c.get("user");
-  const organizationId = authUser?.organizationId || 1;
+  const { organizationId } = getAuthUser(c);
   try {
     const orderId = c.req.param('id');
 
@@ -96,8 +93,7 @@ app.get('/:id', async (c) => {
 
 // POST /api/orders - Créer une nouvelle commande
 app.post('/', async (c) => {
-  const authUser = c.get("user");
-  const organizationId = authUser?.organizationId || 1;
+  const { organizationId } = getAuthUser(c);
   try {
     const body = await c.req.json();
     const { type, customerName, customerEmail, items } = body;
@@ -162,8 +158,7 @@ app.post('/', async (c) => {
 
 // PUT /api/orders/:id/status - Changer le statut d'une commande
 app.put('/:id/status', async (c) => {
-  const authUser = c.get("user");
-  const organizationId = authUser?.organizationId || 1;
+  const { organizationId } = getAuthUser(c);
   try {
     const orderId = c.req.param('id');
     const { status } = await c.req.json();
@@ -189,8 +184,7 @@ app.put('/:id/status', async (c) => {
 
 // POST /api/orders/:id/items - Ajouter des items à une commande
 app.post('/:id/items', async (c) => {
-  const authUser = c.get("user");
-  const organizationId = authUser?.organizationId || 1;
+  const { organizationId } = getAuthUser(c);
   try {
     const orderId = c.req.param('id');
     const { productId, quantity, unitPrice } = await c.req.json();
@@ -219,8 +213,7 @@ app.post('/:id/items', async (c) => {
 
 // DELETE /api/orders/:id - Supprimer une commande
 app.delete('/:id', async (c) => {
-  const authUser = c.get("user");
-  const organizationId = authUser?.organizationId || 1;
+  const { organizationId } = getAuthUser(c);
   try {
     const orderId = c.req.param('id');
 
