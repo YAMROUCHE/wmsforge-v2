@@ -25,23 +25,14 @@ app.get('/', async (c) => {
     ).bind(organizationId).first();
 
     // Récupérer préférences utilisateur
-    let prefs = await c.env.DB.prepare(
-      'SELECT * FROM user_preferences WHERE user_id = ?'
-    ).bind(userId).first();
-
-    // Si pas de préférences, créer avec valeurs par défaut
-    if (!prefs) {
-      await c.env.DB.prepare(`
-        INSERT INTO user_preferences (
-          user_id, notification_email, notification_orders,
-          notification_inventory, notification_low_stock,
-          theme, language, date_format
-        ) VALUES (?, 1, 1, 1, 1, 'light', 'fr', 'dd/mm/yyyy')
-      `).bind(userId).run();
-
+    let prefs: any = null;
+    try {
       prefs = await c.env.DB.prepare(
         'SELECT * FROM user_preferences WHERE user_id = ?'
       ).bind(userId).first();
+    } catch (e) {
+      // Table user_preferences n'existe pas encore, utiliser valeurs par défaut
+      console.log('user_preferences table not found, using defaults');
     }
 
     return c.json({
