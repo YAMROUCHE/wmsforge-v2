@@ -352,8 +352,9 @@ app.get('/prompt/should-show', async (c) => {
       meta: { daysSinceSignup, ordersCount, tasksCount }
     });
   } catch (error) {
-    console.error('Error checking if should show prompt:', error);
-    return c.json({ error: 'Failed to check prompt status' }, 500);
+    // If tables don't exist (testimonials, review_prompts, tasks), gracefully return false
+    console.error('Error checking if should show prompt (tables may not exist):', error);
+    return c.json({ shouldShow: false, reason: 'tables_not_found' });
   }
 });
 
