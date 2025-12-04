@@ -3,10 +3,12 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8787';
 
 // Helper function for API calls
 async function apiCall<T>(endpoint: string, options?: RequestInit): Promise<T> {
+  const token = localStorage.getItem('wms_auth_token');
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
+      ...(token && { 'Authorization': `Bearer ${token}` }),
       ...options?.headers,
     },
   });
