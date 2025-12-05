@@ -71,7 +71,7 @@ export default function Orders() {
       });
       if (response.ok) {
         const data = await response.json();
-        setProducts(data.products || []);
+        setProducts(data.items || []);
       }
     } catch (error) {
       logger.error('Erreur chargement produits:', error);
