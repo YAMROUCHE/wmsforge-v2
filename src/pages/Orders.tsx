@@ -11,7 +11,7 @@ interface Product {
   id: number;
   sku: string;
   name: string;
-  unit_price?: number;
+  unitPrice?: number;
 }
 
 interface OrderItem {
@@ -424,26 +424,36 @@ export default function Orders() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Ajouter un article</label>
                 <div className="grid grid-cols-3 gap-2 mb-2">
-                  <select
-                    value={itemForm.productId}
-                    onChange={(e) => {
-                      const productId = e.target.value;
-                      const product = products.find(p => p.id === parseInt(productId));
-                      setItemForm({
-                        ...itemForm,
-                        productId,
-                        unitPrice: product?.unit_price ? product.unit_price.toString() : ''
-                      });
-                    }}
-                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                  >
-                    <option value="">Produit</option>
-                    {products.map(product => (
-                      <option key={product.id} value={product.id}>
-                        {product.name} ({product.sku})
-                      </option>
-                    ))}
-                  </select>
+                  <div className="flex flex-col gap-1">
+                    <select
+                      value={itemForm.productId}
+                      onChange={(e) => {
+                        const productId = e.target.value;
+                        const product = products.find(p => p.id === parseInt(productId));
+                        setItemForm({
+                          ...itemForm,
+                          productId,
+                          unitPrice: product?.unitPrice ? product.unitPrice.toString() : ''
+                        });
+                      }}
+                      className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                    >
+                      <option value="">Produit</option>
+                      {products.map(product => (
+                        <option key={product.id} value={product.id}>
+                          {product.name} ({product.sku})
+                        </option>
+                      ))}
+                    </select>
+                    <a
+                      href="/products"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                    >
+                      + Créer un nouveau produit
+                    </a>
+                  </div>
                   <input
                     type="number"
                     placeholder="Quantité"
