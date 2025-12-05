@@ -105,7 +105,7 @@ app.post('/', async (c) => {
     let totalAmount = 0;
     if (items && items.length > 0) {
       totalAmount = items.reduce((sum: number, item: any) =>
-        sum + (item.quantity * item.unitPrice), 0
+        sum + (item.quantity * item.unit_price), 0
       );
     }
 
@@ -141,7 +141,7 @@ app.post('/', async (c) => {
         await c.env.DB.prepare(`
           INSERT INTO order_items (order_id, product_id, quantity, unit_price)
           VALUES (?, ?, ?, ?)
-        `).bind(orderId, item.productId, item.quantity, item.unitPrice).run();
+        `).bind(orderId, item.product_id, item.quantity, item.unit_price).run();
       }
     }
 
