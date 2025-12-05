@@ -7,32 +7,93 @@
     border-color: theme('colors.gray.200');
   }
   body {
-    @apply bg-white text-gray-900;
+    @apply bg-background text-gray-900;
     font-feature-settings: "rlig" 1, "calt" 1;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   }
 }
 
 @layer components {
-  /* Style Claude.ai - Boutons */
+  /* Boutons modernes */
   .btn-primary {
-    @apply px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors;
+    @apply px-4 py-2.5 bg-primary-500 text-white rounded-lg font-medium hover:bg-primary-600 transition-all shadow-sm hover:shadow;
   }
-  
+
   .btn-secondary {
-    @apply px-4 py-2 bg-white text-black border border-black rounded-lg font-medium hover:bg-gray-50 transition-colors;
+    @apply px-4 py-2.5 bg-white text-gray-700 border border-gray-300 rounded-lg font-medium hover:bg-gray-50 transition-all shadow-sm;
   }
-  
+
   .btn-ghost {
-    @apply px-4 py-2 text-gray-700 rounded-lg font-medium hover:bg-gray-100 transition-colors;
+    @apply px-4 py-2.5 text-gray-700 rounded-lg font-medium hover:bg-gray-100 transition-colors;
   }
-  
-  /* Navigation active */
+
+  /* Cartes style template */
+  .card {
+    @apply bg-background-card rounded-card shadow-card border border-gray-100 transition-shadow hover:shadow-soft;
+  }
+
+  .stat-card {
+    @apply bg-background-card rounded-card p-6 shadow-card border border-gray-100;
+  }
+
+  /* Badges de statut colorés */
+  .badge {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium;
+  }
+
+  .badge-pending {
+    @apply bg-coral-light text-coral-dark;
+  }
+
+  .badge-done {
+    @apply bg-cyan-light text-cyan-dark;
+  }
+
+  .badge-processing {
+    @apply bg-primary-100 text-primary-700;
+  }
+
+  .badge-warning {
+    @apply bg-orange-light text-orange-dark;
+  }
+
+  /* Navigation tabs style template */
+  .tab {
+    @apply px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors relative font-medium;
+  }
+
+  .tab-active {
+    @apply text-primary-500 bg-primary-50 rounded-lg;
+  }
+
+  /* Navigation links */
   .nav-link {
-    @apply text-gray-700 hover:text-blue-600 transition-colors;
+    @apply text-gray-700 hover:text-primary-500 transition-colors;
   }
-  
+
   .nav-link-active {
-    @apply text-blue-600 font-medium;
+    @apply text-primary-500 font-medium;
+  }
+
+  /* Input style moderne */
+  .input-modern {
+    @apply w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all;
+  }
+
+  /* Icônes colorées pour les stat cards */
+  .icon-orange {
+    @apply bg-orange-light text-orange rounded-lg p-3;
+  }
+
+  .icon-blue {
+    @apply bg-primary-100 text-primary-500 rounded-lg p-3;
+  }
+
+  .icon-cyan {
+    @apply bg-cyan-light text-cyan rounded-lg p-3;
+  }
+
+  .icon-coral {
+    @apply bg-coral-light text-coral rounded-lg p-3;
   }
 }
